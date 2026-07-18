@@ -1,0 +1,2 @@
+"Row-Number","state_name","state_code","is_active","Catalyst-ERRORS"
+"1","Karnataka","KA","True","Invalid input value for is_active. Please give a correct boolean value"

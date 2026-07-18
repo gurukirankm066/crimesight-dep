@@ -1,0 +1,357 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+// ==================== Master Data ====================
+
+model State {
+  ROWID        String  @id
+  CREATORID    String  @db.Text
+  CREATEDTIME  String  @db.Text
+  MODIFIEDTIME String  @db.Text
+  state_name   String  @db.Text
+  state_code   String  @db.Text
+  is_active    Boolean
+}
+
+model District {
+  ROWID         String  @id
+  CREATORID     String  @db.Text
+  CREATEDTIME   String  @db.Text
+  MODIFIEDTIME  String  @db.Text
+  district_name String  @db.Text
+  district_code String  @db.Text
+  state_rowid   String  @db.Text
+  is_active     Boolean
+}
+
+model Unit {
+  ROWID          String  @id
+  CREATORID      String  @db.Text
+  CREATEDTIME    String  @db.Text
+  MODIFIEDTIME   String  @db.Text
+  unit_name      String  @db.Text
+  unit_code      String  @db.Text
+  district_rowid String  @db.Text
+  unit_type      String  @db.Text
+  address        String  @db.Text
+  latitude       String  @db.Text
+  longitude      String  @db.Text
+  contact_number String  @db.Text
+  email          String  @db.Text
+  is_active      Boolean
+}
+
+model Rank {
+  ROWID        String  @id
+  CREATORID    String  @db.Text
+  CREATEDTIME  String  @db.Text
+  MODIFIEDTIME String  @db.Text
+  rank_name    String  @db.Text
+  hierarchy    String  @db.Text
+  is_active    Boolean
+  rank_code    String  @db.Text
+}
+
+model Designation {
+  ROWID            String  @id
+  CREATORID        String  @db.Text
+  CREATEDTIME      String  @db.Text
+  MODIFIEDTIME     String  @db.Text
+  designation_name String  @db.Text
+  sort_order       Int
+  is_active        Boolean
+  designation_code String  @db.Text
+}
+
+model UserRole {
+  ROWID        String  @id
+  CREATORID    String  @db.Text
+  CREATEDTIME  String  @db.Text
+  MODIFIEDTIME String  @db.Text
+  role_name    String  @db.Text
+  role_code    String  @db.Text
+  description  String  @db.Text
+  is_active    Boolean
+}
+
+model Employee {
+  ROWID             String  @id
+  CREATORID         String  @db.Text
+  CREATEDTIME       String  @db.Text
+  MODIFIEDTIME      String  @db.Text
+  employee_id       String  @db.Text
+  full_name         String  @db.Text
+  badge_number      String  @db.Text
+  email             String  @db.Text
+  phone             String  @db.Text
+  rank_rowid        String  @db.Text
+  designation_rowid String  @db.Text
+  unit_rowid        String  @db.Text
+  role_rowid        String  @db.Text
+  profile_photo     String  @db.Text
+  biometric_id      String  @db.Text
+  is_active         Boolean
+}
+
+// ==================== Crime Taxonomy ====================
+
+model CrimeType {
+  ROWID           String  @id
+  CREATORID       String  @db.Text
+  CREATEDTIME     String  @db.Text
+  MODIFIEDTIME    String  @db.Text
+  crime_type_name String  @db.Text
+  crime_type_code String  @db.Text
+  description     String  @db.Text
+  is_active       Boolean
+}
+
+model CrimeCategory {
+  ROWID               String  @id
+  CREATORID           String  @db.Text
+  CREATEDTIME         String  @db.Text
+  MODIFIEDTIME        String  @db.Text
+  crime_category_name String  @db.Text
+  crime_category_code String  @db.Text
+  description         String  @db.Text
+  is_active           Boolean
+}
+
+model Act {
+  ROWID        String  @id
+  CREATORID    String  @db.Text
+  CREATEDTIME  String  @db.Text
+  MODIFIEDTIME String  @db.Text
+  act_name     String  @db.Text
+  act_code     String  @db.Text
+  description  String  @db.Text
+  is_active    Boolean
+}
+
+model Section {
+  ROWID         String  @id
+  CREATORID     String  @db.Text
+  CREATEDTIME   String  @db.Text
+  MODIFIEDTIME  String  @db.Text
+  section_code  String  @db.Text
+  section_title String  @db.Text
+  act_rowid     String  @db.Text
+  description   String  @db.Text
+  is_active     Boolean
+}
+
+model EvidenceType {
+  ROWID              String  @id
+  CREATORID          String  @db.Text
+  CREATEDTIME        String  @db.Text
+  MODIFIEDTIME       String  @db.Text
+  evidence_type_name String  @db.Text
+  evidence_type_code String  @db.Text
+  description        String  @db.Text
+  is_active          Boolean
+}
+
+model VehicleType {
+  ROWID             String  @id
+  CREATORID         String  @db.Text
+  CREATEDTIME       String  @db.Text
+  MODIFIEDTIME      String  @db.Text
+  vehicle_type_name String  @db.Text
+  vehicle_type_code String  @db.Text
+  description       String  @db.Text
+  is_active         Boolean
+}
+
+// ==================== Case Management ====================
+
+model CaseMaster {
+  ROWID                       String  @id
+  CREATORID                   String  @db.Text
+  CREATEDTIME                 String  @db.Text
+  MODIFIEDTIME                String  @db.Text
+  fir_number                  String  @db.Text
+  crime_type_rowid            String  @db.Text
+  crime_category_rowid        String  @db.Text
+  act_rowid                   String  @db.Text
+  section_rowid               String  @db.Text
+  unit_rowid                  String  @db.Text
+  district_rowid              String  @db.Text
+  state_rowid                 String  @db.Text
+  occurrence_datetime         String  @db.Text
+  complaint_datetime          String  @db.Text
+  latitude                    String  @db.Text
+  longitude                   String  @db.Text
+  place_of_occurrence         String  @db.Text
+  complaint_mode              String  @db.Text
+  case_priority               String  @db.Text
+  case_status                 String  @db.Text
+  investigation_officer_rowid String  @db.Text
+  created_by_rowid            String  @db.Text
+  ai_risk_score               Float?
+  ai_summary                  String? @db.Text
+  is_sensitive                Boolean
+}
+
+// ==================== Case Sub-Entities ====================
+
+model Suspect {
+  ROWID              String  @id
+  CREATORID          String  @db.Text
+  CREATEDTIME        String  @db.Text
+  MODIFIEDTIME       String  @db.Text
+  case_rowid         String  @db.Text
+  suspect_name       String  @db.Text
+  gender             String  @db.Text
+  age                String  @db.Text
+  phone              String  @db.Text
+  email              String  @db.Text
+  aadhaar_number     String  @db.Text
+  address            String  @db.Text
+  occupation         String  @db.Text
+  arrest_status      String  @db.Text
+  is_repeat_offender Boolean
+  remarks            String  @db.Text
+}
+
+model Victim {
+  ROWID          String  @id
+  CREATORID      String  @db.Text
+  CREATEDTIME    String  @db.Text
+  MODIFIEDTIME   String  @db.Text
+  case_rowid     String  @db.Text
+  victim_name    String  @db.Text
+  gender         String  @db.Text
+  age            String  @db.Text
+  phone          String  @db.Text
+  email          String  @db.Text
+  aadhaar_number String  @db.Text
+  address        String  @db.Text
+  occupation     String  @db.Text
+  injury_details String  @db.Text
+  statement      String  @db.Text
+  is_primary     Boolean
+}
+
+model Witness {
+  ROWID        String @id
+  CREATORID    String @db.Text
+  CREATEDTIME  String @db.Text
+  MODIFIEDTIME String @db.Text
+  case_rowid   String @db.Text
+  witness_name String @db.Text
+  phone        String @db.Text
+  email        String @db.Text
+  address      String @db.Text
+  statement    String @db.Text
+  witness_type String @db.Text
+}
+
+model Evidence {
+  ROWID               String @id
+  CREATORID           String @db.Text
+  CREATEDTIME         String @db.Text
+  MODIFIEDTIME        String @db.Text
+  case_rowid          String @db.Text
+  evidence_type_rowid String @db.Text
+  evidence_name       String @db.Text
+  description         String @db.Text
+  file_url            String @db.Text
+  collected_by_rowid  String @db.Text
+  collection_datetime String @db.Text
+  chain_of_custody    String @db.Text
+  forensic_status     String @db.Text
+}
+
+model Property {
+  ROWID            String  @id
+  CREATORID        String  @db.Text
+  CREATEDTIME      String  @db.Text
+  MODIFIEDTIME     String  @db.Text
+  case_rowid       String  @db.Text
+  property_name    String  @db.Text
+  property_type    String  @db.Text
+  estimated_value  Float
+  recovered_status Boolean
+  description      String  @db.Text
+}
+
+model Vehicle {
+  ROWID              String  @id
+  CREATORID          String  @db.Text
+  CREATEDTIME        String  @db.Text
+  MODIFIEDTIME       String  @db.Text
+  case_rowid         String  @db.Text
+  vehicle_number     String  @db.Text
+  vehicle_type_rowid String  @db.Text
+  make               String  @db.Text
+  model              String  @db.Text
+  color              String  @db.Text
+  owner_name         String  @db.Text
+  chassis_number     String  @db.Text
+  engine_number      String  @db.Text
+  seized_status      Boolean
+}
+
+// ==================== Investigation ====================
+
+model ArrestSurrender {
+  ROWID                   String @id
+  CREATORID               String @db.Text
+  CREATEDTIME             String @db.Text
+  MODIFIEDTIME            String @db.Text
+  case_rowid              String @db.Text
+  accused_rowid           String @db.Text
+  arrest_type             String @db.Text
+  arrest_datetime         String @db.Text
+  arrest_location         String @db.Text
+  arresting_officer_rowid String @db.Text
+  remarks                 String @db.Text
+}
+
+model Chargesheet {
+  ROWID              String @id
+  CREATORID          String @db.Text
+  CREATEDTIME        String @db.Text
+  MODIFIEDTIME       String @db.Text
+  case_rowid         String @db.Text
+  filing_date        String @db.Text
+  court_name         String @db.Text
+  judge_name         String @db.Text
+  chargesheet_number String @db.Text
+  filing_status      String @db.Text
+  document_url       String @db.Text
+}
+
+model InvestigationActivity {
+  ROWID                String @id
+  CREATORID            String @db.Text
+  CREATEDTIME          String @db.Text
+  MODIFIEDTIME         String @db.Text
+  case_rowid           String @db.Text
+  activity_type        String @db.Text
+  activity_description String @db.Text
+  activity_datetime    String @db.Text
+  officer_rowid        String @db.Text
+  attachment_url       String @db.Text
+}
+
+model CaseAssignment {
+  ROWID             String @id
+  CREATORID         String @db.Text
+  CREATEDTIME       String @db.Text
+  MODIFIEDTIME      String @db.Text
+  case_rowid        String @db.Text
+  assigned_to_rowid String @db.Text
+  assigned_by_rowid String @db.Text
+  assigned_datetime String @db.Text
+  assignment_status String @db.Text
+  remarks           String @db.Text
+}

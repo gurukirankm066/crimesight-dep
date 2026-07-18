@@ -1,0 +1,622 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.5rem;
+  --background: #0a0f1a;
+  --foreground: #e2e8f0;
+  --card: #111827;
+  --card-foreground: #e2e8f0;
+  --popover: #111827;
+  --popover-foreground: #e2e8f0;
+  --primary: #10b981;
+  --primary-foreground: #0a0f1a;
+  --secondary: #1e293b;
+  --secondary-foreground: #e2e8f0;
+  --muted: #1e293b;
+  --muted-foreground: #64748b;
+  --accent: #10b981;
+  --accent-foreground: #0a0f1a;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: #10b981;
+  --chart-1: #10b981;
+  --chart-2: #22d3ee;
+  --chart-3: #f59e0b;
+  --chart-4: #ef4444;
+  --chart-5: #8b5cf6;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+::selection {
+  background: rgba(16, 185, 129, 0.25);
+  color: #f9fafb;
+}
+
+/* ── Custom Scrollbar ── */
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.custom-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ── Minimum readable text size: 11px for body text. Captions/metadata may go to 10px.
+     Avoid anything below 9px except for truly decorative elements. ── */
+
+/* ── Glass Card — unified style ── */
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
+  box-shadow: none;
+  transition: border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  display: none;
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+/* ── Glass Card Inner (for nested/inner cards) ── */
+
+.glass-card-inner {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-card-inner:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ── Holo Card (kept for compatibility, rendered as standard card) ── */
+
+.holo-card {
+  position: relative;
+  border-radius: 0.625rem;
+  padding: 1px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: border-color 0.2s ease;
+}
+
+.holo-card-inner {
+  background: #0f172a;
+  border-radius: calc(0.625rem - 1px);
+  padding: 1rem;
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+
+.holo-card:hover {
+  border-color: rgba(16, 185, 129, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ── Neon Text (kept for compatibility, glow removed) ── */
+
+.neon-text-emerald { color: #34d399; }
+.neon-text-cyan { color: #22d3ee; }
+.neon-text-red { color: #f87171; }
+.neon-text-amber { color: #fbbf24; }
+.neon-text-violet { color: #a78bfa; }
+
+/* ── Neon Box (kept for compatibility, glow removed) ── */
+
+.neon-box-emerald { border: 1px solid rgba(16, 185, 129, 0.15); }
+.neon-box-cyan { border: 1px solid rgba(34, 211, 238, 0.15); }
+.neon-box-red { border: 1px solid rgba(239, 68, 68, 0.15); }
+
+/* ── Glitch Text (kept for compatibility, effect removed) ── */
+
+.glitch-text {
+  position: relative;
+  display: inline-block;
+}
+
+.glitch-text::before {
+  display: block;
+  content: attr(data-text);
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  opacity: 0;
+  color: #22d3ee;
+  z-index: -1;
+}
+.glitch-text::after {
+  display: block;
+  content: attr(data-text);
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  opacity: 0;
+  color: #ef4444;
+  z-index: -1;
+}
+.glitch-text:hover::before {
+  animation: glitch-subtle-1 0.3s linear;
+}
+.glitch-text:hover::after {
+  animation: glitch-subtle-2 0.3s linear;
+}
+
+@keyframes glitch-subtle-1 {
+  0%, 100% { opacity: 0; transform: none; }
+  20% { opacity: 0.5; transform: translateX(-1px); }
+  40% { opacity: 0; }
+}
+@keyframes glitch-subtle-2 {
+  0%, 100% { opacity: 0; transform: none; }
+  20% { opacity: 0; }
+  40% { opacity: 0.5; transform: translateX(1px); }
+}
+
+/* ── Neon Border Flow (kept for compatibility, effect removed) ── */
+
+.neon-border-flow {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: #0f172a;
+  position: relative;
+}
+
+.neon-border-flow::before {
+  display: none;
+}
+
+/* ── Radar Sweep ── */
+
+@keyframes radar-sweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes radar-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* ── Active Tab ── */
+
+.neon-tab-active {
+  background: rgba(16, 185, 129, 0.1);
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+/* ── Cyber Pulse (kept for compatibility, animation removed) ── */
+
+@keyframes cyber-breathe-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.15); }
+  50% { box-shadow: 0 0 8px 0 rgba(239, 68, 68, 0.08); }
+}
+
+@keyframes cyber-breathe-amber {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.15); }
+  50% { box-shadow: 0 0 8px 0 rgba(245, 158, 11, 0.08); }
+}
+
+@keyframes cyber-breathe-emerald {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.15); }
+  50% { box-shadow: 0 0 8px 0 rgba(16, 185, 129, 0.08); }
+}
+
+.cyber-pulse-red { animation: cyber-breathe-red 3s ease-in-out infinite; }
+.cyber-pulse-amber { animation: cyber-breathe-amber 3s ease-in-out infinite; }
+.cyber-pulse-emerald { animation: cyber-breathe-emerald 3s ease-in-out infinite; }
+
+/* ── Stat Value ── */
+
+.stat-value {
+  font-family: var(--font-mono), 'Courier New', monospace;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.stat-value-glow-emerald { color: #34d399; }
+.stat-value-glow-cyan { color: #22d3ee; }
+.stat-value-glow-amber { color: #fbbf24; }
+.stat-value-glow-violet { color: #a78bfa; }
+
+/* ── Type Scale (3 levels only) ── */
+/* Display:  text-[22px] font-bold  — big numbers */
+/* Title:    text-[13px] font-semibold uppercase tracking-wider — section headers */
+/* Body:     text-[12px] — card content, table rows */
+/* Caption:  text-[10px] text-slate-500 — metadata, timestamps */
+
+/* ── Section Header ── */
+
+.section-header {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Table Dossier ── */
+
+.table-dossier {
+  font-size: 13px;
+}
+
+.table-dossier thead th {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.table-dossier tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  vertical-align: middle;
+}
+
+.table-dossier tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.008);
+}
+
+.table-dossier tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ── Threat Bar ── */
+
+.threat-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.threat-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+/* ── Anomaly Pulse ── */
+
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.2); }
+  50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+.anomaly-pulse {
+  animation: pulse-red 2s infinite;
+}
+
+/* ── Chart Container ── */
+
+.chart-container {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
+  padding: 24px;
+  position: relative;
+}
+
+/* ── Chat Messages ── */
+
+.chat-msg-user {
+  background: #10b981;
+  color: #0a0f1a;
+  border-radius: 2px 12px 12px 12px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.chat-msg-ai {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--foreground);
+  border-radius: 12px 2px 12px 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  border-left: 2px solid rgba(16, 185, 129, 0.3);
+}
+
+/* ── Rank Badges ── */
+
+.rank-1 { background: linear-gradient(135deg, #FFD700, #B8860B); color: #1a1a1a; }
+.rank-2 { background: linear-gradient(135deg, #C0C0C0, #808080); color: #1a1a1a; }
+.rank-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); color: white; }
+
+/* ── SVG Pulse (for map bubbles) ── */
+
+@keyframes svg-ping {
+  0% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+@keyframes svg-glow-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.15; transform: scale(1.15); }
+}
+
+/* ── Typing Indicator ── */
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-4px); }
+}
+
+/* ── Ops Atmosphere (kept for compatibility, effects removed) ── */
+
+.ops-atmosphere {
+  position: relative;
+  overflow: hidden;
+}
+
+.ops-atmosphere::before {
+  display: block;
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.02) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+.ops-atmosphere::after {
+  display: block;
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 100%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.1), transparent);
+  pointer-events: none;
+}
+
+/* ── Ambient Glow (kept for compatibility, hidden) ── */
+
+.ambient-glow {
+  display: block;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: radial-gradient(ellipse at 20% 50%, rgba(16, 185, 129, 0.03) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, rgba(34, 211, 238, 0.02) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Particles (kept for compatibility, hidden) ── */
+
+.cyber-particle {
+  display: none;
+}
+
+/* ── Boot Sequence (kept for compatibility) ── */
+
+@keyframes boot-glow-pulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(16, 185, 129, 0.3); }
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ── Ticker Scroll ── */
+
+.ticker-track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  animation: ticker-scroll 120s linear infinite;
+}
+
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── Alert Rows ── */
+
+.alert-row-critical {
+  border-left: 2px solid rgba(239, 68, 68, 0.4);
+}
+
+.alert-row-high {
+  border-left: 2px solid rgba(245, 158, 11, 0.25);
+}
+
+/* ── Neon Button (kept for compatibility, effect removed) ── */
+
+.neon-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.neon-button::after {
+  display: block;
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: linear-gradient(transparent, rgba(16, 185, 129, 0.05), transparent);
+  transform: rotate(45deg) translateY(-100%);
+  transition: transform 0.6s ease;
+}
+.neon-button:hover::after {
+  transform: rotate(45deg) translateY(0%);
+}
+
+/* ── Fix #11: Scrollbar polish already applied above ── */
+
+/* ── Fix #12: Global hover states for interactive elements ── */
+
+button:not([disabled]),
+a:not([disabled]) {
+  transition: all 0.15s ease;
+}
+
+/* ── Fix #13: Focus ring for keyboard navigation ── */
+
+button:focus-visible,
+input:focus-visible,
+[role="tab"]:focus-visible {
+  outline: 2px solid rgba(16, 185, 129, 0.4);
+  outline-offset: 1px;
+  border-radius: 4px;
+}
+
+/* ── Fix #14: Smoother transitions on glass-card ── */
+
+.glass-card {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ── Mobile Scroll Hint ── */
+
+.scroll-hint-right {
+  position: relative;
+}
+
+.scroll-hint-right::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  background: linear-gradient(to left, #0a0f1a, transparent);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ── Fix #15: Table row hover ── */
+
+.table-dossier tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+/* Tab scroll affordance */
+.tab-scroll-container {
+  position: relative;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent);
+}
+
+/* ── KPI Live Pulse Flash ── */
+@keyframes kpi-pulse-flash {
+  0% { color: inherit; text-shadow: none; }
+  30% { text-shadow: 0 0 8px rgba(16, 185, 129, 0.6); }
+  100% { color: inherit; text-shadow: none; }
+}
+
+.kpi-live-pulse {
+  animation: kpi-pulse-flash 1s ease-out;
+}

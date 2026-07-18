@@ -1,0 +1,355 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "sqlite"
+  url          = env("DATABASE_URL")
+}
+
+// ==================== Master Data ====================
+
+model State {
+  ROWID       String   @id 
+  CREATORID   String   
+  CREATEDTIME String   
+  MODIFIEDTIME String  
+  state_name  String   
+  state_code  String   
+  is_active   Boolean
+}
+
+model District {
+  ROWID        String @id 
+  CREATORID    String 
+  CREATEDTIME  String 
+  MODIFIEDTIME String 
+  district_name String 
+  district_code String 
+  state_rowid  String 
+  is_active    Boolean
+}
+
+model Unit {
+  ROWID        String @id 
+  CREATORID    String 
+  CREATEDTIME  String 
+  MODIFIEDTIME String 
+  unit_name    String 
+  unit_code    String 
+  district_rowid String 
+  unit_type    String 
+  address      String   
+  latitude     String 
+  longitude    String 
+  contact_number String 
+  email        String 
+  is_active    Boolean
+}
+
+model Rank {
+  ROWID        String @id 
+  CREATORID    String 
+  CREATEDTIME  String 
+  MODIFIEDTIME String 
+  rank_name    String 
+  hierarchy    String 
+  is_active    Boolean
+  rank_code    String 
+}
+
+model Designation {
+  ROWID            String @id 
+  CREATORID        String 
+  CREATEDTIME      String 
+  MODIFIEDTIME     String 
+  designation_name String 
+  sort_order       Int
+  is_active        Boolean
+  designation_code String 
+}
+
+model UserRole {
+  ROWID        String @id 
+  CREATORID    String 
+  CREATEDTIME  String 
+  MODIFIEDTIME String 
+  role_name    String 
+  role_code    String 
+  description  String   
+  is_active    Boolean
+}
+
+model Employee {
+  ROWID            String @id 
+  CREATORID        String 
+  CREATEDTIME      String 
+  MODIFIEDTIME     String 
+  employee_id      String 
+  full_name        String 
+  badge_number     String 
+  email            String 
+  phone            String 
+  rank_rowid       String 
+  designation_rowid String 
+  unit_rowid       String 
+  role_rowid       String 
+  profile_photo    String 
+  biometric_id     String 
+  is_active        Boolean
+}
+
+// ==================== Crime Taxonomy ====================
+
+model CrimeType {
+  ROWID            String @id 
+  CREATORID        String 
+  CREATEDTIME      String 
+  MODIFIEDTIME     String 
+  crime_type_name  String 
+  crime_type_code  String 
+  description      String   
+  is_active        Boolean
+}
+
+model CrimeCategory {
+  ROWID                String @id 
+  CREATORID            String 
+  CREATEDTIME          String 
+  MODIFIEDTIME         String 
+  crime_category_name  String 
+  crime_category_code  String 
+  description          String   
+  is_active            Boolean
+}
+
+model Act {
+  ROWID        String @id 
+  CREATORID    String 
+  CREATEDTIME  String 
+  MODIFIEDTIME String 
+  act_name     String 
+  act_code     String 
+  description  String   
+  is_active    Boolean
+}
+
+model Section {
+  ROWID        String @id 
+  CREATORID    String 
+  CREATEDTIME  String 
+  MODIFIEDTIME String 
+  section_code String 
+  section_title String 
+  act_rowid    String 
+  description  String   
+  is_active    Boolean
+}
+
+model EvidenceType {
+  ROWID              String @id 
+  CREATORID          String 
+  CREATEDTIME        String 
+  MODIFIEDTIME       String 
+  evidence_type_name String 
+  evidence_type_code String 
+  description        String   
+  is_active          Boolean
+}
+
+model VehicleType {
+  ROWID              String @id 
+  CREATORID          String 
+  CREATEDTIME        String 
+  MODIFIEDTIME       String 
+  vehicle_type_name  String 
+  vehicle_type_code  String 
+  description        String   
+  is_active          Boolean
+}
+
+// ==================== Case Management ====================
+
+model CaseMaster {
+  ROWID                  String   @id 
+  CREATORID              String   
+  CREATEDTIME            String   
+  MODIFIEDTIME           String   
+  fir_number             String   
+  crime_type_rowid       String   
+  crime_category_rowid   String   
+  act_rowid              String   
+  section_rowid          String   
+  unit_rowid             String   
+  district_rowid         String   
+  state_rowid            String   
+  occurrence_datetime    String   
+  complaint_datetime     String   
+  latitude               String   
+  longitude              String   
+  place_of_occurrence    String   
+  complaint_mode         String   
+  case_priority          String   
+  case_status            String   
+  investigation_officer_rowid String 
+  created_by_rowid       String   
+  ai_risk_score          Float?
+  ai_summary             String?  
+  is_sensitive           Boolean
+}
+
+// ==================== Case Sub-Entities ====================
+
+model Suspect {
+  ROWID            String @id 
+  CREATORID        String 
+  CREATEDTIME      String 
+  MODIFIEDTIME     String 
+  case_rowid       String 
+  suspect_name     String 
+  gender           String 
+  age              String 
+  phone            String 
+  email            String 
+  aadhaar_number   String 
+  address          String   
+  occupation       String 
+  arrest_status    String 
+  is_repeat_offender Boolean
+  remarks          String   
+}
+
+model Victim {
+  ROWID            String @id 
+  CREATORID        String 
+  CREATEDTIME      String 
+  MODIFIEDTIME     String 
+  case_rowid       String 
+  victim_name      String 
+  gender           String 
+  age              String 
+  phone            String 
+  email            String 
+  aadhaar_number   String 
+  address          String   
+  occupation       String 
+  injury_details   String   
+  statement        String   
+  is_primary       Boolean
+}
+
+model Witness {
+  ROWID        String @id 
+  CREATORID    String 
+  CREATEDTIME  String 
+  MODIFIEDTIME String 
+  case_rowid   String 
+  witness_name String 
+  phone        String 
+  email        String 
+  address      String   
+  statement    String   
+  witness_type String 
+}
+
+model Evidence {
+  ROWID            String @id 
+  CREATORID        String 
+  CREATEDTIME      String 
+  MODIFIEDTIME     String 
+  case_rowid       String 
+  evidence_type_rowid String 
+  evidence_name    String 
+  description      String   
+  file_url         String 
+  collected_by_rowid String 
+  collection_datetime String 
+  chain_of_custody String   
+  forensic_status  String 
+}
+
+model Property {
+  ROWID           String  @id 
+  CREATORID       String  
+  CREATEDTIME     String  
+  MODIFIEDTIME    String  
+  case_rowid      String  
+  property_name   String  
+  property_type   String  
+  estimated_value Float
+  recovered_status Boolean
+  description     String    
+}
+
+model Vehicle {
+  ROWID          String @id 
+  CREATORID      String 
+  CREATEDTIME    String 
+  MODIFIEDTIME   String 
+  case_rowid     String 
+  vehicle_number String 
+  vehicle_type_rowid String 
+  make           String 
+  model          String 
+  color          String 
+  owner_name     String 
+  chassis_number String 
+  engine_number  String 
+  seized_status  Boolean
+}
+
+// ==================== Investigation ====================
+
+model ArrestSurrender {
+  ROWID                String @id 
+  CREATORID            String 
+  CREATEDTIME          String 
+  MODIFIEDTIME         String 
+  case_rowid           String 
+  accused_rowid        String 
+  arrest_type          String 
+  arrest_datetime      String 
+  arrest_location      String 
+  arresting_officer_rowid String 
+  remarks              String   
+}
+
+model Chargesheet {
+  ROWID           String @id 
+  CREATORID       String 
+  CREATEDTIME     String 
+  MODIFIEDTIME    String 
+  case_rowid      String 
+  filing_date     String 
+  court_name      String 
+  judge_name      String 
+  chargesheet_number String 
+  filing_status   String 
+  document_url    String 
+}
+
+model InvestigationActivity {
+  ROWID               String @id 
+  CREATORID           String 
+  CREATEDTIME         String 
+  MODIFIEDTIME        String 
+  case_rowid          String 
+  activity_type       String 
+  activity_description String   
+  activity_datetime   String 
+  officer_rowid       String 
+  attachment_url      String 
+}
+
+model CaseAssignment {
+  ROWID             String @id 
+  CREATORID         String 
+  CREATEDTIME       String 
+  MODIFIEDTIME      String 
+  case_rowid        String 
+  assigned_to_rowid String 
+  assigned_by_rowid String 
+  assigned_datetime String 
+  assignment_status String 
+  remarks           String   
+}
