@@ -128,24 +128,24 @@ export default function OperationsTab() {
   const approved = Object.values(statuses).filter(s => s === 'Approved').length
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-xl border border-emerald-500/15 bg-gradient-to-r from-emerald-500/[0.09] via-[#0f1f27] to-[#0a0f1a] p-5 lg:p-6">
+    <div className="space-y-4 sm:space-y-5">
+      <section className="rounded-xl border border-emerald-500/15 bg-gradient-to-r from-emerald-500/[0.09] via-[#0f1f27] to-[#0a0f1a] p-4 sm:p-5 lg:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400">
               <ShieldCheck className="size-3.5" /> Governed operations layer
             </div>
-            <h2 className="text-xl font-bold tracking-tight text-white">Intelligence only matters when it becomes an accountable action.</h2>
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-white">Intelligence only matters when it becomes an accountable action.</h2>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">
               Every recommendation shows its evidence cues, requires human review, and creates a visible audit entry. The system supports decisions—it never makes enforcement decisions.
             </p>
           </div>
-          <div className="flex gap-3">
-            <div className="rounded-lg border border-white/[0.07] bg-black/20 px-4 py-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-3">
+            <div className="rounded-lg border border-white/[0.07] bg-black/20 px-3 sm:px-4 py-2">
               <p className="text-[10px] uppercase tracking-wider text-slate-500">Review queue</p>
               <p className="mt-0.5 text-lg font-bold text-white">{queue.length} <span className="text-xs font-medium text-slate-500">items</span></p>
             </div>
-            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-2">
+            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 sm:px-4 py-2">
               <p className="text-[10px] uppercase tracking-wider text-emerald-500/80">Approved</p>
               <p className="mt-0.5 text-lg font-bold text-emerald-300">{approved}</p>
             </div>
@@ -155,7 +155,7 @@ export default function OperationsTab() {
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_330px]">
         <section className="rounded-xl border border-white/[0.07] bg-[#0d141f]/85 overflow-hidden">
-          <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3.5">
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-white/[0.06] px-3 sm:px-5 py-3.5">
             <div>
               <h3 className="flex items-center gap-2 text-sm font-bold text-white"><ClipboardCheck className="size-4 text-emerald-400" /> Recommended review queue</h3>
               <p className="mt-0.5 text-[11px] text-slate-500">{queueSource === 'foundry' ? 'Live read-only Foundry FIR objects · ranked by transparent rule-based signals' : 'Synthetic prototype fallback · ranked by transparent rule-based signals'}</p>
@@ -166,7 +166,7 @@ export default function OperationsTab() {
             {queue.map(item => {
               const status = statuses[item.case.rowid] ?? 'Awaiting review'
               return (
-                <article key={item.case.rowid} className="p-4 transition-colors hover:bg-white/[0.018]">
+                <article key={item.case.rowid} className="p-3 sm:p-4 transition-colors hover:bg-white/[0.018]">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
@@ -178,7 +178,7 @@ export default function OperationsTab() {
                       <p className="mt-1 text-xs text-slate-400">{item.recommendation}</p>
                       <p className="mt-2 text-[10px] leading-relaxed text-slate-500">{item.reason}</p>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
+                    <div className="flex flex-wrap shrink-0 items-center gap-2">
                       <Badge className={`text-[9px] ${status === 'Approved' ? 'bg-emerald-500/15 text-emerald-300' : status === 'Needs evidence' ? 'bg-sky-500/15 text-sky-300' : 'bg-slate-500/15 text-slate-300'}`}>{status}</Badge>
                       {item.source === 'local'
                         ? <Button size="sm" variant="outline" onClick={() => navigateToFir(item.case.rowid)} className="h-7 border-white/10 bg-white/[0.02] px-2 text-[10px] text-slate-300 hover:bg-white/[0.06]"><Eye className="mr-1 size-3" /> Open</Button>

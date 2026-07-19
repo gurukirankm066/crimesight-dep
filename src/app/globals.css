@@ -82,6 +82,25 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
+  overflow-x: hidden;
+}
+
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+
+.tab-scroll-container {
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+
+.tab-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-scroll-container > button {
+  scroll-snap-align: start;
 }
 
 ::selection {

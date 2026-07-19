@@ -186,7 +186,7 @@ export default function Home() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#0a0f1a] relative" suppressHydrationWarning>
+    <div className="h-[100dvh] min-h-[100dvh] flex flex-col bg-[#0a0f1a] relative overflow-hidden" suppressHydrationWarning>
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-3 focus:py-1.5 focus:bg-emerald-600 focus:text-white focus:text-xs focus:rounded-md">
         Skip to content
       </a>
@@ -198,7 +198,7 @@ export default function Home() {
       >
         {/* ═══ HEADER — Single clean row ═══ */}
         <header className="shrink-0 bg-[#060a12]/95 backdrop-blur-sm border-b border-white/[0.06] relative z-10">
-          <div className="flex items-center justify-between px-4 lg:px-6 h-12">
+          <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-y-1 px-3 sm:px-4 lg:px-6 min-h-12 py-1 sm:py-0">
             {/* Left: Brand */}
             <div className="flex items-center gap-2.5 shrink-0">
               <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
@@ -213,7 +213,7 @@ export default function Home() {
             </div>
 
             {/* Center: Tab Navigation */}
-            <nav className="tab-scroll-container flex items-center gap-0.5 mx-4 overflow-x-auto" aria-label="Main navigation">
+            <nav className="tab-scroll-container order-3 flex w-full items-center gap-0.5 overflow-x-auto sm:order-none sm:w-auto sm:flex-1 sm:mx-4" aria-label="Main navigation">
               {tabs.map(tab => {
                 const active = activeTab === tab.value
                 return (
@@ -221,7 +221,7 @@ export default function Home() {
                     key={tab.value}
                     onClick={() => handleTabChange(tab.value)}
                     className={`
-                      relative flex items-center gap-1.5 px-3 h-8 text-[11px] font-medium
+                      relative flex min-w-11 items-center gap-1.5 px-2.5 sm:px-3 h-8 text-[11px] font-medium
                       transition-all duration-200 rounded-md whitespace-nowrap
                       ${active
                         ? 'bg-emerald-500/10 text-emerald-400'
@@ -240,7 +240,7 @@ export default function Home() {
             </nav>
 
             {/* Right: Actions */}
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="ml-auto flex items-center gap-1 shrink-0">
               {/* Voice FIR — accessible via ⌘K */}
               <button
                 onClick={() => setShowVoiceFir(true)}
@@ -292,7 +292,7 @@ export default function Home() {
               </button>
 
               {/* Divider */}
-              <div className="w-px h-4 bg-white/[0.06] mx-0.5" />
+              <div className="hidden sm:block w-px h-4 bg-white/[0.06] mx-0.5" />
 
               {/* LIVE Indicator + Clock */}
               <div className="hidden md:flex items-center gap-1.5">
@@ -357,7 +357,7 @@ export default function Home() {
           </div>
         )}
 
-        <div className="shrink-0 px-4 lg:px-6 py-1 bg-amber-500/[0.04] border-b border-amber-500/10 text-center text-[9px] text-amber-300/70">
+        <div className="shrink-0 px-3 sm:px-4 lg:px-6 py-1 bg-amber-500/[0.04] border-b border-amber-500/10 text-center text-[9px] text-amber-300/70">
           Prototype mode — reproducible synthetic FIR data modeled on the supplied KSP ER schema; not live operational data.
         </div>
 
@@ -370,7 +370,7 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.2 }}
-              className="p-5 lg:p-7 max-w-[1600px] mx-auto w-full"
+              className="p-3 sm:p-5 lg:p-7 max-w-[1600px] mx-auto w-full"
             >
               <TabErrorBoundary tabName={tabNames[activeTab] || activeTab} key={activeTab}>
                 <Active />
@@ -433,7 +433,7 @@ export default function Home() {
 
         {/* ═══ FOOTER — AI Chat Prominent ═══ */}
         <footer className="shrink-0 relative z-10 border-t border-white/[0.06] bg-[#060a12]/95 backdrop-blur-sm">
-          <div className="flex items-center gap-3 px-4 lg:px-6 h-11">
+          <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 lg:px-6 h-12 sm:h-11">
             {/* Left: Status */}
             <div className="flex items-center gap-2 shrink-0">
               <span className="relative flex size-1.5">
