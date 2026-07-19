@@ -479,7 +479,7 @@ export default function HelpWidget() {
                 className="flex-1 h-8 bg-[#111827] border border-white/[0.06] rounded-md px-3 text-[12px] text-slate-200 placeholder:text-slate-600 outline-none focus:border-emerald-500/30 transition-colors disabled:opacity-40"
               />
               <button
-                onClick={handleSend}
+                onClick={() => { void handleSend() }}
                 disabled={isTyping || !input.trim()}
                 className="w-8 h-8 rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 disabled:hover:bg-emerald-600 flex items-center justify-center transition-colors shrink-0"
               >

@@ -318,8 +318,8 @@ export default function DashboardTab() {
   const stats = {
     totalCases: d.stats?.totalCases ?? DEMO_DATA.stats.totalCases,
     activeInvestigations: d.stats?.activeInvestigations ?? DEMO_DATA.stats.activeInvestigations,
-    arrests: d.stats?.arrests ?? d.stats?.totalArrests ?? DEMO_DATA.stats.arrests,
-    chargesheets: d.stats?.chargesheets ?? d.stats?.chargeSheetFiled ?? DEMO_DATA.stats.chargesheets,
+    arrests: d.stats?.arrests ?? DEMO_DATA.stats.arrests,
+    chargesheets: d.stats?.chargesheets ?? DEMO_DATA.stats.chargesheets,
     districts: d.stats?.districts ?? DEMO_DATA.stats.districts,
     officers: d.stats?.officers ?? DEMO_DATA.stats.officers,
   }
@@ -1026,7 +1026,7 @@ export default function DashboardTab() {
           </div>
         </motion.div>
 
-        {/* ── KSP CCTNS Intelligence Layer ── */}
+        {/* ── Prototype Intelligence Layer ── */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1036,7 +1036,7 @@ export default function DashboardTab() {
           <div className="flex items-center gap-2 mb-3">
             <Database className="size-3.5 text-emerald-400" />
             <h3 className="text-[13px] font-semibold text-emerald-400 uppercase tracking-wider">
-              KSP CCTNS Intelligence Layer
+              Prototype Intelligence Layer
             </h3>
             <Badge className="h-4 px-1.5 text-[9px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
               {GEN_STATS.totalCases.toLocaleString('en-IN')} FIRs
@@ -1132,7 +1132,7 @@ export default function DashboardTab() {
             </div>
             <div className="flex items-center justify-between text-[10px]">
               <span className="text-slate-500">Data Source</span>
-              <span className="text-slate-300 font-medium">KSP CCTNS / SCRB</span>
+              <span className="text-slate-300 font-medium">Synthetic prototype dataset</span>
             </div>
             <div className="flex items-center justify-between text-[10px]">
               <span className="text-slate-500">Records Ingested</span>

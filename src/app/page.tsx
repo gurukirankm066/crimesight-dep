@@ -352,6 +352,10 @@ export default function Home() {
           </div>
         )}
 
+        <div className="shrink-0 px-4 lg:px-6 py-1 bg-amber-500/[0.04] border-b border-amber-500/10 text-center text-[9px] text-amber-300/70">
+          Prototype mode — reproducible synthetic FIR data modeled on the supplied KSP ER schema; not live operational data.
+        </div>
+
         {/* ═══ MAIN CONTENT ═══ */}
         <main id="main-content" className="flex-1 min-h-0 overflow-y-auto custom-scrollbar relative z-[2]">
           <AnimatePresence mode="wait">

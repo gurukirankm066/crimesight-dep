@@ -317,7 +317,7 @@ export default function CasesTab() {
               <div className="flex flex-col items-center justify-center py-16 text-slate-600">
                 <ClipboardEdit className="size-6 mb-2 opacity-40" />
                 <p className="text-[12px]">No field reports yet</p>
-                <p className="text-[10px] mt-1">Use "Field FIR" button in header to submit</p>
+                <p className="text-[10px] mt-1">Use the Field FIR button in the header to submit</p>
               </div>
             ) : (
               <table className="table-dossier w-full">
@@ -823,7 +823,7 @@ export default function CasesTab() {
       {/* Pagination */}
       <div className="flex items-center justify-between mt-4 text-xs">
         <span className="text-slate-400 tabular-nums">
-          Showing {(page - 1) * ITEMS_PER_PAGE + 1}–{Math.min(page * ITEMS_PER_PAGE, filtered.length)} of {filtered.length} FIRs (CCTNS)
+          Showing {(page - 1) * ITEMS_PER_PAGE + 1}–{Math.min(page * ITEMS_PER_PAGE, filtered.length)} of {filtered.length} synthetic FIRs
         </span>
         <div className="flex gap-1.5">
           <Button variant="outline" size="sm" className="h-7 px-3 text-[10px] border-white/10 hover:bg-emerald-500/10 hover:border-emerald-500/30" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
@@ -835,7 +835,7 @@ export default function CasesTab() {
         </div>
       </div>
       <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/[0.04]">
-        <span className="text-[9px] text-slate-600">Data sourced from CCTNS / SCRB Crime Database</span>
+        <span className="text-[9px] text-slate-600">Synthetic prototype data — modeled on supplied KSP ER schema</span>
         <span className="text-[9px] text-slate-600 tabular-nums">Last sync: {new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })} hrs</span>
       </div>
       </>

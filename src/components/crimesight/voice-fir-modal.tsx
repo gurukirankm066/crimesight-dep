@@ -147,7 +147,7 @@ function parseTranscript(text: string): ParsedFirData {
   for (const pattern of placePatterns) {
     const match = text.match(pattern)
     if (match) {
-      let place = match[1].trim()
+      const place = match[1].trim()
       // Don't include district name in place
       if (place.toLowerCase() !== detectedDistrict.toLowerCase()) {
         detectedPlace = place

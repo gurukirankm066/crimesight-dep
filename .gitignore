@@ -3,6 +3,7 @@ node_modules/
 dist/
 build/
 *.log
+*.tsbuildinfo
 .env
 prisma/dev.db
 prisma/*.db-journal

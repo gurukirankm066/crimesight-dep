@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { X, Search, Shield, Car, MapPin, Clock, Package, Users, AlertTriangle, ChevronRight, Loader2, FileText, Brain, Fingerprint, AlertOctagon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -69,10 +69,10 @@ function buildKSPCrackResult(caseRowid: string, fir: string, crimeType: string, 
     leads.push({
       type: 'repeat_suspect', confidence: Math.min(78 + ro.totalCases * 3, 98),
       title: 'Repeat offender \u201c' + ro.name + '\u201d linked to ' + ro.totalCases + ' FIRs',
-      description: 'CCTNS cross-reference identifies ' + ro.name + ' (Ph: ' + ro.phone + ') as a repeat offender across ' + ro.totalCases + ' separate FIRs in the SCRB database.',
+      description: 'Prototype association analysis identifies ' + ro.name + ' as a repeat offender across ' + ro.totalCases + ' synthetic FIRs.',
       suspect: sus ? { name: sus.name, gender: sus.gender, age: sus.age, phone: sus.phone, address: sus.address, occupation: sus.occupation, isRepeatOffender: true } : { name: ro.name, isRepeatOffender: true },
       linkedCases: linked.filter(l => l.matchReason.includes('Shared suspect')).slice(0, 5).map(l => ({ fir: l.fir, crimeType: l.crimeType, district: l.district, status: l.status })),
-      action: 'IO ' + district + ' to obtain complete prior arrest history from CCTNS. Coordinate with district SP for inter-station intelligence sharing.',
+      action: 'Demo recommendation: validate the linked FIR history with the investigating officer and coordinate inter-station intelligence sharing.',
     })
   }
 
@@ -202,7 +202,7 @@ export default function CaseCrackerModal({ caseId, fir, crimeType, district, onC
   useEffect(() => { crack() }, // eslint-disable-next-line react-hooks/exhaustive-deps
   [])
 
-  const crack = async () => {
+  async function crack() {
     setLoading(true)
     setProgress(0)
     setError(null)

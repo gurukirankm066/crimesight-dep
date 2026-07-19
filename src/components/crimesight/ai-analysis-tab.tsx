@@ -353,6 +353,7 @@ export default function AIAnalysisTab() {
       ...c,
       occurrenceDate: parseDate(c.occurrenceDate),
     }))
+    const totalCases = casesWithDates.length
 
     const predictions: Array<{
       icon: React.ComponentType<{ className?: string }>

@@ -160,11 +160,11 @@ export interface GeneratedCase {
   daysAgo: number
 }
 
-// ─── Date Generation — FY 2024-25 (Apr 2024 – Mar 2025) ───
-// Anchor: today is treated as late March 2025 for FY context.
+// ─── Date Generation — FY 2025-26 (Apr 2025 – Mar 2026) ───
+// The fixed period keeps the synthetic prototype reproducible across demos.
 // Recent 30 days still get heavier weighting for "live" feel.
-const FY_START = new Date(2024, 3, 1)  // Apr 1, 2024
-const FY_END   = new Date(2025, 2, 31) // Mar 31, 2025
+const FY_START = new Date(2025, 3, 1)  // Apr 1, 2025
+const FY_END   = new Date(2026, 2, 31) // Mar 31, 2026
 const FY_TOTAL_DAYS = Math.round((FY_END.getTime() - FY_START.getTime()) / 86400000) // ~365
 
 function generateDate(daysAgo: number, hour?: number): string {
@@ -198,7 +198,7 @@ function getDaysAgo(): number {
 }
 
 // ─── Generate All 10K Cases ───
-const TOTAL_CASES = 10000
+export const TOTAL_CASES = 10000
 const totalWeight = DISTRICTS.reduce((s, d) => s + d.weight, 0)
 
 function generateCases(): GeneratedCase[] {

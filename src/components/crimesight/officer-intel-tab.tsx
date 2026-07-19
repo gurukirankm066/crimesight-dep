@@ -35,7 +35,7 @@ import {
   FileText,
   Link2,
 } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, type Variants } from 'framer-motion'
 
 import { GENERATED_CASES } from '@/lib/case-generator'
 
@@ -95,21 +95,21 @@ interface LeaderboardData {
    FRAMER VARIANTS
    ═══════════════════════════════════════════════════════════════ */
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
 }
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 16, scale: 0.97 },
   visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
 }
 
-const statCardVariants = {
+const statCardVariants: Variants = {
   hidden: { opacity: 0, y: -10, scale: 0.92 },
   visible: (i: number) => ({
     opacity: 1, y: 0, scale: 1,
-    transition: { delay: 0.15 + i * 0.07, duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+    transition: { delay: 0.15 + i * 0.07, duration: 0.45, ease: [0.22, 1, 0.36, 1] as const },
   }),
 }
 
@@ -427,8 +427,8 @@ export default function OfficerIntelTab() {
 
     // Sort
     list.sort((a, b) => {
-      const aVal = (a as Record<string, unknown>)[sortField] as number
-      const bVal = (b as Record<string, unknown>)[sortField] as number
+      const aVal = (a as unknown as Record<string, number>)[sortField] ?? 0
+      const bVal = (b as unknown as Record<string, number>)[sortField] ?? 0
       return sortDir === 'desc' ? bVal - aVal : aVal - bVal
     })
 
@@ -445,8 +445,8 @@ export default function OfficerIntelTab() {
     }
 
     list.sort((a, b) => {
-      const aVal = (a as Record<string, unknown>)[unitSort] as number
-      const bVal = (b as Record<string, unknown>)[unitSort] as number
+      const aVal = (a as unknown as Record<string, number>)[unitSort] ?? 0
+      const bVal = (b as unknown as Record<string, number>)[unitSort] ?? 0
       return unitSortDir === 'desc' ? bVal - aVal : aVal - bVal
     })
 

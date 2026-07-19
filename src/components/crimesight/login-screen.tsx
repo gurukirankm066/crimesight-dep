@@ -146,10 +146,10 @@ export default function LoginScreen({ onAuthenticated }: LoginScreenProps) {
                     transition={{ duration: 0.4 }}
                     className="text-[10px] text-slate-500 mt-1 tracking-wide"
                   >
-                    AI-Powered Intelligence Platform · Karnataka State Police — SCRB
+                    Prototype Intelligence Platform · Synthetic demonstration environment
                   </motion.p>
                   <div className="flex items-center justify-center gap-2 mt-2">
-                    <span className="text-[8px] font-mono text-red-400/70 uppercase tracking-widest">Restricted Access</span>
+                    <span className="text-[8px] font-mono text-amber-300/70 uppercase tracking-widest">Prototype Access</span>
                     <Lock className="size-2.5 text-red-400/50" />
                   </div>
                 </div>
@@ -236,7 +236,7 @@ export default function LoginScreen({ onAuthenticated }: LoginScreenProps) {
                 {/* Classification footer */}
                 <div className="mt-5 pt-4 border-t border-white/[0.04] text-center">
                   <p className="text-[9px] text-slate-600">
-                    Contact SCRB IT Cell for access credentials
+                    Demonstration environment — no operational police data
                   </p>
                 </div>
               </div>

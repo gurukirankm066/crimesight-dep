@@ -51,7 +51,7 @@ export default function IntelActivation({ onComplete }: Props) {
   const [activeModule, setActiveModule] = useState(-1)
   const [progress, setProgress] = useState(0)
 
-  const stableOnComplete = useCallback(onComplete, [onComplete])
+  const stableOnComplete = useCallback(() => onComplete(), [onComplete])
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase('granted'), 900)

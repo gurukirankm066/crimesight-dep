@@ -125,7 +125,7 @@ export default function TrendsTab() {
         <div className="flex items-center gap-2.5">
           <TrendingUp className="size-4 text-emerald-400" />
           <h2 className="text-sm font-semibold text-slate-300 tracking-[0.1em] uppercase">
-            SCRB Statistical Cell — Crime Trend Report, FY 2024-25
+            Prototype Statistical Cell — Synthetic Crime Trend Report, FY 2025-26
           </h2>
         </div>
         <div className="flex items-center gap-2">
@@ -137,7 +137,7 @@ export default function TrendsTab() {
             onClick={clearDateRange}
             className={`text-xs px-2 py-0.5 rounded transition-colors ${hasDateFilter ? 'text-amber-400 hover:bg-amber-500/10' : 'text-slate-600 hover:text-slate-400'}`}
           >
-            {hasDateFilter ? 'Reset' : 'FY 2024-25'}
+            {hasDateFilter ? 'Reset' : 'FY 2025-26'}
           </button>
         </div>
       </div>
@@ -205,7 +205,7 @@ export default function TrendsTab() {
 
         {activeSub === 1 && (
           <div className="chart-container min-h-[250px]" role="region" aria-label="Crime Volume by District chart">
-            <h3 className="text-[13px] font-semibold text-slate-300 uppercase tracking-wider mb-4">Crime Volume by District — Top 12 (FY 2024-25)</h3>
+            <h3 className="text-[13px] font-semibold text-slate-300 uppercase tracking-wider mb-4">Crime Volume by District — Top 12 (FY 2025-26)</h3>
             <ResponsiveContainer width="100%" height={400}>
               <BarChart data={districtData} margin={{ left: 10, right: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -244,7 +244,7 @@ export default function TrendsTab() {
 
         {activeSub === 3 && (
           <div className="chart-container min-h-[250px]" role="region" aria-label="Monthly FIR Registration chart">
-            <h3 className="text-[13px] font-semibold text-slate-300 uppercase tracking-wider mb-4">Monthly FIR Registration — FY 2024-25 (Apr–Mar)</h3>
+            <h3 className="text-[13px] font-semibold text-slate-300 uppercase tracking-wider mb-4">Monthly FIR Registration — FY 2025-26 (Apr–Mar)</h3>
             <ResponsiveContainer width="100%" height={350}>
               <LineChart data={monthlyData} margin={{ left: 10, right: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -258,7 +258,7 @@ export default function TrendsTab() {
         )}
       </motion.div>
       <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/[0.04]">
-        <span className="text-[9px] text-slate-600">Source: SCRB Crime Records Database — 10,000 case dataset, 90-day analysis window, Bengaluru</span>
+        <span className="text-[9px] text-slate-600">Synthetic 10,000-case prototype dataset — modeled on supplied KSP ER schema</span>
         <span className="text-[9px] text-slate-600 tabular-nums">
           Report generated: {new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })} hrs
         </span>

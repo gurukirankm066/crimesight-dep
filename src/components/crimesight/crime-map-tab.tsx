@@ -98,6 +98,7 @@ const GEOJSON_TO_DB: Record<string, string> = {
   'Tumkur': 'Tumakuru',
   'Uttar Kannand': 'Uttara Kannada',
   'Chikkaballapur': 'Chikkaballapur',
+  'Chikballapur': 'Chikkaballapur',
   'Ramanagara': 'Ramanagara',
   'Yadgir': 'Yadgir',
   'Vijayanagara': 'Vijayanagara',
@@ -903,7 +904,7 @@ export default function CrimeMapTab() {
 
       {/* Data Source Footer */}
       <div className="flex items-center justify-between pt-3 border-t border-white/[0.04]">
-        <span className="text-[9px] text-slate-600">Source: SCRB Geo-Spatial Database, Karnataka State Police</span>
+        <span className="text-[9px] text-slate-600">Synthetic prototype data — modeled on supplied KSP ER schema</span>
         <span className="text-[9px] text-slate-600 tabular-nums">
           Map data: {new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })} hrs
         </span>

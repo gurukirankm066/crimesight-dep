@@ -46,6 +46,7 @@ export async function GET(req: NextRequest) {
       db.caseMaster.findMany({
         where: { district_rowid: matchedDistrictId },
         select: {
+          district_rowid: true,
           fir_number: true,
           place_of_occurrence: true,
           latitude: true,

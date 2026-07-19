@@ -1213,19 +1213,19 @@ function NetworkGraphPanel() {
     nodesRef.current = nodes
     linksRef.current = links
     const sim = forceSimulation<GraphNode>(nodes)
-      .force('link', forceLink<GraphNode, GraphLink>(links).id(d => d.id).distance(d => {
+      .force('link', forceLink<GraphNode, GraphLink>(links).id(d => d.id).distance((d: GraphLink) => {
         if (d.type === 'shared-case') return 50
         if (d.type === 'case-district' || d.type === 'case-crime') return 80
         if (d.type === 'officer-case') return 100
         return 60
-      }).strength(d => {
+      }).strength((d: GraphLink) => {
         if (d.type === 'shared-case') return 0.5
         if (d.type === 'case-district') return 0.05
         if (d.type === 'case-crime') return 0.08
         if (d.type === 'officer-case') return 0.1
         return 0.3
       }))
-      .force('charge', forceManyBody().strength(d => d.type === 'district' || d.type === 'crimeType' ? -400 : -150))
+      .force('charge', forceManyBody<GraphNode>().strength(d => d.type === 'district' || d.type === 'crimeType' ? -400 : -150))
       .force('center', forceCenter(600, 400))
       .force('collide', forceCollide<GraphNode>().radius(d => d.size + 3))
       .alphaDecay(0.02)
@@ -1273,18 +1273,18 @@ function NetworkGraphPanel() {
     dragRef.current = { nodeId, startX: e.clientX, startY: e.clientY, moved: false }
     const sim = simRef.current
     const node = nodesRef.current.find(n => n.id === nodeId)
-    if (sim && node) { node.fx = node.x; node.fy = node.y; sim.alphaTarget(0.3).restart() }
+    if (sim && node) { node.fx = node.x ?? 0; node.fy = node.y ?? 0; sim.alphaTarget(0.3).restart() }
     const onMove = (ev: MouseEvent) => {
       dragRef.current.moved = true
       const dx = (ev.clientX - dragRef.current.startX) / transformRef.current.k
       const dy = (ev.clientY - dragRef.current.startY) / transformRef.current.k
-      if (node) { node.fx = (node.fx ?? node.x) + dx; node.fy = (node.fy ?? node.y) + dy }
+      if (node) { node.fx = (node.fx ?? node.x ?? 0) + dx; node.fy = (node.fy ?? node.y ?? 0) + dy }
       dragRef.current.startX = ev.clientX
       dragRef.current.startY = ev.clientY
       sim?.alpha(0.3).restart()
     }
     const onUp = () => {
-      if (node) { node.fx = undefined as unknown as number; node.fy = undefined as unknown as number }
+      if (node) { node.fx = undefined; node.fy = undefined }
       sim?.alphaTarget(0)
       window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp)
     }
@@ -2110,7 +2110,7 @@ function KSPIntelligencePanel({
           </Badge>
         </h3>
         <p className="text-[11px] text-slate-500 mb-3">
-          Cross-referenced via CCTNS fingerprint &amp; phone-number matching across all Karnataka districts. Click any card to locate linked cases on the graph.
+          Synthetic association model links cases using repeat identifiers, locations, and modus-operandi patterns. Click any card to locate linked cases on the graph.
         </p>
         <div className="relative mb-4 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -2374,7 +2374,7 @@ export default function NetworkTab() {
 
       {/* Data Source Footer */}
       <div className="flex items-center justify-between pt-3 border-t border-white/[0.04]">
-        <span className="text-[9px] text-slate-600">Source: CCTNS + SCRB Crime Database, Bengaluru</span>
+        <span className="text-[9px] text-slate-600">Synthetic prototype data — modeled on supplied KSP ER schema</span>
         <span className="text-[9px] text-slate-600 tabular-nums">
           Graph data: {new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })} hrs
         </span>

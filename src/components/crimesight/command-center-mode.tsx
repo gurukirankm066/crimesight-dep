@@ -596,7 +596,7 @@ export default function CommandCenterMode({ onExit }: CommandCenterModeProps) {
   const [activeView, setActiveView] = useState(0)
   const [countdown, setCountdown] = useState(ROTATION_INTERVAL / 1000) // initial value
 
-  const countdownRef = useRef<ReturnType<typeof setInterval>>()
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const isFullscreen = useRef(false)
 
   /* ── Compute all data locally from 10K case-generator ── */

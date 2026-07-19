@@ -1,61 +1,27 @@
 import type { ContextRetriever } from '../types'
-import { db, serialize } from '@/lib/db'
+import { db } from '@/lib/db'
+import { getCrimeTypes, getDistricts } from '@/lib/dal'
 
-/**
- * DatabaseContextRetriever — keyword-based context retrieval from the crime database.
- * Matches user questions against known keywords to run targeted SQL queries
- * and return structured data for LLM consumption.
- */
+/** Retrieves only schema-valid, aggregated context for the prototype assistant. */
 export class DatabaseContextRetriever implements ContextRetriever {
   async retrieve(question: string): Promise<string> {
     const q = question.toLowerCase()
-    let contextData = ''
+    const cases = await db.caseMaster.findMany({ select: { district_rowid: true, crime_type_rowid: true, case_status: true, case_priority: true } })
+    const [districts, crimeTypes] = await Promise.all([getDistricts(), getCrimeTypes()])
 
-    if (q.includes('district') || q.includes('area') || q.includes('region') || q.includes('which')) {
-      const raw = await db.$queryRawUnsafe(`
-        SELECT d.DistrictName, COUNT(c.CaseMasterID) as total,
-               SUM(CASE WHEN c.CaseStatusID = 1 THEN 1 ELSE 0 END) as active,
-               SUM(CASE WHEN c.GravityOffenceID = 1 THEN 1 ELSE 0 END) as heinous
-        FROM CaseMaster c
-        JOIN Unit u ON c.PoliceStationID = u.UnitID
-        JOIN District d ON u.DistrictID = d.DistrictID
-        GROUP BY d.DistrictID ORDER BY total DESC LIMIT 10
-      `)
-      const rows = serialize(raw)
-      contextData = 'District crime data (top 10): ' + JSON.stringify(rows)
-    } else if (q.includes('crime type') || q.includes('theft') || q.includes('murder') || q.includes('assault') || q.includes('robbery') || q.includes('cyber') || q.includes('type')) {
-      const raw = await db.$queryRawUnsafe(`
-        SELECT ch.CrimeGroupName, COUNT(*) as count
-        FROM CaseMaster c JOIN CrimeHead ch ON c.CrimeMajorHeadID = ch.CrimeHeadID
-        GROUP BY ch.CrimeHeadID ORDER BY count DESC
-      `)
-      const rows = serialize(raw)
-      contextData = 'Crime type distribution: ' + JSON.stringify(rows)
-    } else if (q.includes('most wanted') || q.includes('repeat') || q.includes('offender') || q.includes('criminal') || q.includes('dangerous')) {
-      const raw = await db.$queryRawUnsafe(`
-        SELECT a.AccusedName, COUNT(DISTINCT a.CaseMasterID) as cases,
-               COUNT(ar.ArrestSurrenderID) as arrests
-        FROM Accused a
-        LEFT JOIN ArrestSurrender ar ON ar.AccusedMasterID = a.AccusedMasterID
-        GROUP BY a.AccusedMasterID HAVING cases >= 2
-        ORDER BY cases DESC LIMIT 10
-      `)
-      const rows = serialize(raw)
-      contextData = 'Repeat offenders (top 10): ' + JSON.stringify(rows)
-    } else if (q.includes('arrest') || q.includes('charge') || q.includes('convict')) {
-      const total = await db.caseMaster.count()
-      const arrests = await db.arrestSurrender.count()
-      const cs = await db.chargesheetDetails.count()
-      contextData = `Total FIRs: ${total}, Arrests made: ${arrests} (${((arrests / total) * 100).toFixed(1)}%), Chargesheets filed: ${cs} (${((cs / total) * 100).toFixed(1)}%)`
-    } else {
-      const total = await db.caseMaster.count()
-      const active = await db.caseMaster.count({ where: { CaseStatusID: 1 } })
-      const arrests = await db.arrestSurrender.count()
-      const cs = await db.chargesheetDetails.count()
-      const heinous = await db.caseMaster.count({ where: { GravityOffenceID: 1 } })
-      contextData = `Total FIRs: ${total}, Under Investigation: ${active}, Arrests: ${arrests}, Chargesheets: ${cs}, Heinous crimes: ${heinous}`
+    if (q.includes('district') || q.includes('area') || q.includes('region')) {
+      const totals = new Map<string, number>()
+      for (const c of cases) totals.set(c.district_rowid, (totals.get(c.district_rowid) ?? 0) + 1)
+      return `District case totals: ${JSON.stringify([...totals.entries()].map(([id, total]) => ({ district: districts.get(id)?.district_name ?? 'Unknown', total })).sort((a, b) => b.total - a.total).slice(0, 10))}`
     }
-
-    return contextData
+    if (q.includes('crime type') || q.includes('theft') || q.includes('murder') || q.includes('assault') || q.includes('robbery') || q.includes('cyber') || q.includes('type')) {
+      const totals = new Map<string, number>()
+      for (const c of cases) totals.set(c.crime_type_rowid, (totals.get(c.crime_type_rowid) ?? 0) + 1)
+      return `Crime type distribution: ${JSON.stringify([...totals.entries()].map(([id, count]) => ({ crimeType: crimeTypes.get(id)?.crime_type_name ?? 'Unknown', count })).sort((a, b) => b.count - a.count))}`
+    }
+    const [arrests, chargesheets] = await Promise.all([db.arrestSurrender.count(), db.chargesheet.count()])
+    const active = cases.filter(c => c.case_status === 'Open' || c.case_status === 'Under Investigation').length
+    const critical = cases.filter(c => c.case_priority === 'Critical').length
+    return `Prototype FIRs: ${cases.length}, active investigations: ${active}, critical-priority cases: ${critical}, arrests: ${arrests}, chargesheets: ${chargesheets}.`
   }
 }

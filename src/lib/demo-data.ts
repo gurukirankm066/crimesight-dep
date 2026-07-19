@@ -1118,7 +1118,7 @@ export function getArcCases(arcId: string): DemoCase[] {
 export function getArcSuspects(arcId: string): DemoSuspect[] {
   const arc = DEMO_NARRATIVE_ARCS.find(a => a.id === arcId)
   if (!arc) return []
-  const caseIds = new Set(arc.caseIds)
+  const caseIds = new Set<string>(arc.caseIds)
   return DEMO_SUSPECTS.filter(s => caseIds.has(s.case_rowid))
 }
 

@@ -810,7 +810,7 @@ export default function MorningBriefTab() {
       >
         <div className="flex items-center gap-2">
           <Shield className="size-3" />
-          <span>SCRB Intelligence Cell · Data aggregated from KSP Crime Database</span>
+          <span>Prototype Intelligence Cell · Synthetic data modeled on supplied KSP ER schema</span>
         </div>
         <span>Brief ID: SCRB/MB/{new Date().getFullYear()}/{String(new Date().getMonth() + 1).padStart(2, '0')}/{String(new Date().getDate()).padStart(2, '0')}</span>
       </motion.div>
