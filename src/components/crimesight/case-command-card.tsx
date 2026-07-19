@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { AlertTriangle, CheckCircle2, ChevronRight, Clock3, Database, FileText, MapPin, Network, ShieldCheck, UserRound, Users, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -13,15 +13,18 @@ interface Props {
 }
 
 export default function CaseCommandCard({ open, onClose }: Props) {
-  const [decision, setDecision] = useState<'pending' | 'approved' | 'evidence'>('pending')
   const navigateToFir = useCrimeSightStore(s => s.navigateToFir)
   const setActiveTab = useCrimeSightStore(s => s.setActiveTab)
+  const reviewActions = useCrimeSightStore(s => s.reviewActions)
+  const recordReviewAction = useCrimeSightStore(s => s.recordReviewAction)
   const featuredCase = useMemo(
     () => GENERATED_CASES.find(item => item.priority === 'Critical' && item.hasRepeatOffender) ?? GENERATED_CASES[0],
     [],
   )
 
   if (!open) return null
+
+  const decision = reviewActions.find(action => action.firId === featuredCase.rowid)?.status ?? 'pending'
 
   const openRegistry = () => {
     navigateToFir(featuredCase.rowid)
@@ -33,9 +36,9 @@ export default function CaseCommandCard({ open, onClose }: Props) {
     onClose()
   }
 
-  const actionMessage = decision === 'approved'
+  const actionMessage = decision === 'Approved'
     ? 'Supervisor review approved. This records a review decision only; it does not trigger enforcement.'
-    : decision === 'evidence'
+    : decision === 'Needs evidence'
       ? 'Evidence follow-up requested. The case remains with a human officer for review.'
       : 'Awaiting a human supervisor decision.'
 
@@ -101,10 +104,10 @@ export default function CaseCommandCard({ open, onClose }: Props) {
                 <div className="flex items-center gap-2"><ShieldCheck className="size-4 text-emerald-400" /><h3 className="text-sm font-bold text-white">Supervisor decision</h3></div>
                 <p className="mt-2 text-xs leading-relaxed text-slate-400">{actionMessage}</p>
                 <div className="mt-4 grid gap-2">
-                  <Button size="sm" onClick={() => setDecision('approved')} className="bg-emerald-600 text-xs hover:bg-emerald-500"><CheckCircle2 className="mr-1.5 size-3.5" /> Approve review</Button>
-                  <Button size="sm" variant="outline" onClick={() => setDecision('evidence')} className="border-sky-500/25 bg-sky-500/[0.04] text-xs text-sky-200 hover:bg-sky-500/[0.12]">Request evidence follow-up</Button>
+                  <Button size="sm" onClick={() => recordReviewAction({ firId: featuredCase.rowid, fir: featuredCase.fir, status: 'Approved', actor: 'Prototype supervisor', reason: 'Review linked FIRs and nominate a lead investigator.' })} className="bg-emerald-600 text-xs hover:bg-emerald-500"><CheckCircle2 className="mr-1.5 size-3.5" /> Approve review</Button>
+                  <Button size="sm" variant="outline" onClick={() => recordReviewAction({ firId: featuredCase.rowid, fir: featuredCase.fir, status: 'Needs evidence', actor: 'Prototype supervisor', reason: 'Evidence follow-up requested before review approval.' })} className="border-sky-500/25 bg-sky-500/[0.04] text-xs text-sky-200 hover:bg-sky-500/[0.12]">Request evidence follow-up</Button>
                 </div>
-                {decision !== 'pending' && <div className="mt-3 rounded-md border border-emerald-500/15 bg-emerald-500/[0.05] p-2.5 text-[10px] text-emerald-200">Prototype audit entry created at {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })}.</div>}
+                {decision !== 'pending' && <div className="mt-3 rounded-md border border-emerald-500/15 bg-emerald-500/[0.05] p-2.5 text-[10px] text-emerald-200">Prototype audit entry is shared with the Actions workspace and retained in this browser after refresh.</div>}
               </section>
 
               <section className="rounded-xl border border-white/[0.07] bg-[#0d1724] p-4 sm:p-5"><h3 className="text-sm font-bold text-white">Governance safeguards</h3><ul className="mt-3 space-y-2 text-[11px] leading-relaxed text-slate-400"><li>• No automated enforcement outcome.</li><li>• Reasons are shown before review.</li><li>• Human supervisor action is required.</li><li>• Synthetic demo data only.</li></ul></section>

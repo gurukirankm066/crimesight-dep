@@ -45,7 +45,7 @@ const tabs = [
   { value: 'network', label: 'Network', icon: GitBranch, shortLabel: 'LNK' },
   { value: 'most-wanted', label: 'Targets', icon: Target, shortLabel: 'TGT' },
   { value: 'cases', label: 'FIRs', icon: FileText, shortLabel: 'FIR' },
-  { value: 'ai', label: 'Predict', icon: Brain, shortLabel: 'AI' },
+  { value: 'ai', label: 'Signals', icon: Brain, shortLabel: 'SIG' },
   { value: 'brief', label: 'Morning Brief', icon: Sun, shortLabel: 'BRIEF' },
 ] as const
 
@@ -68,7 +68,7 @@ const tabNames: Record<string, string> = {
   network: 'Link Analysis',
   'most-wanted': 'Priority Targets',
   cases: 'FIR Registry',
-  ai: 'Predictive Intel',
+  ai: 'Transparent Review Signals',
   brief: 'Morning Intel Brief',
   operations: 'Governed Operations Queue',
 }

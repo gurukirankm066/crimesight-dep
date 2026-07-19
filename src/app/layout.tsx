@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "CrimeSight AI — Karnataka State Police Command Center",
   description:
-    "AI-Powered Crime Intelligence & Analytics Platform for Karnataka State Police. KSP Datathon 2026.",
+    "Governed synthetic crime-intelligence prototype for Karnataka State Police. KSP Datathon 2026.",
   keywords: [
     "CrimeSight",
     "KSP",

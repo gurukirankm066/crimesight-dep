@@ -5,9 +5,7 @@ import { CheckCircle2, ClipboardCheck, Eye, MapPin, Network, ShieldCheck, UserCh
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { GENERATED_CASES, type GeneratedCase } from '@/lib/case-generator'
-import { useCrimeSightStore } from '@/lib/store'
-
-type ReviewStatus = 'Awaiting review' | 'Approved' | 'Needs evidence'
+import { useCrimeSightStore, type ReviewStatus } from '@/lib/store'
 
 interface ReviewCase {
   rowid: string
@@ -93,9 +91,11 @@ export default function OperationsTab() {
   const [queueSource, setQueueSource] = useState<QueueItem['source']>('local')
   const [syncedAt, setSyncedAt] = useState<string | null>(null)
   const navigateToFir = useCrimeSightStore(s => s.navigateToFir)
-  const [statuses, setStatuses] = useState<Record<string, ReviewStatus>>({})
-  const [audit, setAudit] = useState<string[]>([])
+  const reviewActions = useCrimeSightStore(s => s.reviewActions)
+  const recordReviewAction = useCrimeSightStore(s => s.recordReviewAction)
   const [foundry, setFoundry] = useState<FoundryStatus | null>(null)
+
+  const actionByCase = useMemo(() => new Map(reviewActions.map(action => [action.firId, action])), [reviewActions])
 
   useEffect(() => {
     fetch('/api/foundry/status')
@@ -118,14 +118,16 @@ export default function OperationsTab() {
   }, [])
 
   const changeStatus = (item: QueueItem, status: ReviewStatus) => {
-    setStatuses(current => ({ ...current, [item.case.rowid]: status }))
-    setAudit(current => [
-      `${item.case.fir}: ${status.toLowerCase()} by prototype supervisor at ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })}`,
-      ...current,
-    ].slice(0, 4))
+    recordReviewAction({
+      firId: item.case.rowid,
+      fir: item.case.fir,
+      status,
+      actor: 'Prototype supervisor',
+      reason: status === 'Approved' ? 'Review linked FIRs and nominate a lead investigator.' : 'Evidence follow-up requested before review approval.',
+    })
   }
 
-  const approved = Object.values(statuses).filter(s => s === 'Approved').length
+  const approved = reviewActions.filter(action => action.status === 'Approved').length
 
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -164,7 +166,8 @@ export default function OperationsTab() {
           </div>
           <div className="divide-y divide-white/[0.05]">
             {queue.map(item => {
-              const status = statuses[item.case.rowid] ?? 'Awaiting review'
+              const action = actionByCase.get(item.case.rowid)
+              const status = action?.status ?? 'Awaiting review'
               return (
                 <article key={item.case.rowid} className="p-3 sm:p-4 transition-colors hover:bg-white/[0.018]">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -220,7 +223,7 @@ export default function OperationsTab() {
           </section>
           <section className="rounded-xl border border-white/[0.07] bg-[#0d141f]/85 p-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">Audit trail</h3>
-            {audit.length ? <div className="mt-3 space-y-2">{audit.map((entry, i) => <p key={`${entry}-${i}`} className="rounded-md border border-white/[0.05] bg-black/15 p-2 text-[10px] leading-relaxed text-slate-400">{entry}</p>)}</div> : <p className="mt-3 text-[11px] leading-relaxed text-slate-500">No actions recorded yet. Approve or request evidence to create a prototype audit entry.</p>}
+            {reviewActions.length ? <div className="mt-3 space-y-2">{reviewActions.slice(0, 4).map(action => <p key={action.firId} className="rounded-md border border-white/[0.05] bg-black/15 p-2 text-[10px] leading-relaxed text-slate-400"><span className="font-mono text-emerald-300">{action.fir}</span>: {action.status.toLowerCase()} by {action.actor} at {new Date(action.recordedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })}.<br /><span className="text-slate-500">{action.reason}</span></p>)}</div> : <p className="mt-3 text-[11px] leading-relaxed text-slate-500">No actions recorded yet. Approve or request evidence to create a prototype audit entry.</p>}
           </section>
         </aside>
       </div>

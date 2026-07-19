@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
     const reply = response.choices[0]?.message?.content || 'Unable to generate response.'
     return Response.json({ reply })
-  } catch (error: any) {
-    return Response.json({ reply: `AI service temporarily unavailable. Error: ${error.message}` })
+  } catch {
+    return Response.json({ reply: 'AI service temporarily unavailable. Please use the synthetic prototype views while the assistant reconnects.' }, { status: 503 })
   }
 }

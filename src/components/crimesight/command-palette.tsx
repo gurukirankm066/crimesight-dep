@@ -34,7 +34,7 @@ const navItems = [
   { value: 'network', label: 'Link Analysis', icon: GitBranch, shortcut: '5', desc: 'Suspect association mapping' },
   { value: 'most-wanted', label: 'Priority Targets', icon: Target, shortcut: '6', desc: 'Repeat offender threat ranking' },
   { value: 'cases', label: 'FIR Registry', icon: FileText, shortcut: '7', desc: 'Search and manage FIR records' },
-  { value: 'ai', label: 'Predictive Intel', icon: Brain, shortcut: '8', desc: 'Predictive risk scoring and anomaly detection' },
+  { value: 'ai', label: 'Review Signals', icon: Brain, shortcut: '8', desc: 'Transparent rule-based review signals and anomaly context' },
 ]
 
 const quickActions = [

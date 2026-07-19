@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 export type TabValue = 'map' | 'dashboard' | 'trends' | 'network' | 'most-wanted' | 'cases' | 'ai' | 'brief' | 'operations'
 
@@ -31,6 +32,17 @@ export interface FieldFirReport {
   assignedTo?: string
   lastStatusUpdate?: string
   isSample?: boolean
+}
+
+export type ReviewStatus = 'Approved' | 'Needs evidence'
+
+export interface ReviewAction {
+  firId: string
+  fir: string
+  status: ReviewStatus
+  actor: string
+  reason: string
+  recordedAt: string
 }
 
 interface CrimeSightState {
@@ -100,6 +112,10 @@ interface CrimeSightState {
   showFieldFirsOnly: boolean
   setShowFieldFirsOnly: (v: boolean) => void
   fieldFirBadgeCount: number
+
+  // ── Governed Review Workflow ──
+  reviewActions: ReviewAction[]
+  recordReviewAction: (action: Omit<ReviewAction, 'recordedAt'>) => void
 }
 
 export interface TickerItem {
@@ -227,7 +243,7 @@ const SAMPLE_FIELD_FIRS: FieldFirReport[] = [
   },
 ]
 
-export const useCrimeSightStore = create<CrimeSightState>((set, get) => ({
+export const useCrimeSightStore = create<CrimeSightState>()(persist((set) => ({
   // ── Navigation ──
   activeTab: 'map',
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -309,4 +325,16 @@ export const useCrimeSightStore = create<CrimeSightState>((set, get) => ({
   showFieldFirsOnly: false,
   setShowFieldFirsOnly: (v) => set({ showFieldFirsOnly: v }),
   fieldFirBadgeCount: 3, // Sample count with 'Submitted' status
+
+  // ── Governed Review Workflow ──
+  reviewActions: [],
+  recordReviewAction: (action) => set((state) => ({
+    reviewActions: [
+      { ...action, recordedAt: new Date().toISOString() },
+      ...state.reviewActions.filter(existing => existing.firId !== action.firId),
+    ].slice(0, 25),
+  })),
+}), {
+  name: 'crimesight-prototype-review-v1',
+  partialize: (state) => ({ reviewActions: state.reviewActions }),
 }))

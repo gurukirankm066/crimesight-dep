@@ -96,7 +96,7 @@ const TAB_LABELS: Record<string, string> = {
   network: 'Link Analysis',
   'most-wanted': 'Priority Targets',
   cases: 'FIR Registry',
-  ai: 'Predictive Intel',
+  ai: 'Review Signals',
 }
 
 /* ═══════════════════════════════════════════════════════════════

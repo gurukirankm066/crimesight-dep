@@ -8,7 +8,7 @@ const MODULES = [
   { name: 'GEO INTELLIGENCE', sub: '31 Districts Mapped', icon: Map },
   { name: 'COMMAND CENTER', sub: 'Real-time Monitoring', icon: Radio },
   { name: 'FIR REGISTRY', sub: '10,000 Cases Loaded', icon: Database },
-  { name: 'PREDICTIVE ANALYSIS', sub: 'AI Models Online', icon: Brain },
+  { name: 'REVIEW SIGNALS', sub: 'Transparent Cues Loaded', icon: Brain },
   { name: 'NETWORK INTELLIGENCE', sub: 'Link Analysis Ready', icon: Target },
   { name: 'FIELD OPERATIONS', sub: 'Mobile Units Synced', icon: FileText },
 ]
@@ -17,7 +17,7 @@ const STATS = [
   { label: 'FIRs Processed', value: 10000, suffix: '' },
   { label: 'Districts Active', value: 31, suffix: '' },
   { label: 'Officers Online', value: 156, suffix: '' },
-  { label: 'AI Confidence', value: 94, suffix: '%' },
+  { label: 'Review Cues Active', value: 4, suffix: '' },
 ]
 
 interface Props {

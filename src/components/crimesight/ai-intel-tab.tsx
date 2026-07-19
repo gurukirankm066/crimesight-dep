@@ -197,23 +197,25 @@ function ClassifiedResponse({ response, query }: { response: string; query: stri
     hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
   })
 
+  const renderInline = (text: string) => text.split(/\*\*(.*?)\*\*/g).map((part, index) => (
+    index % 2 === 1 ? <strong key={index} className="font-semibold text-white">{part}</strong> : part
+  ))
+
   const parseMarkdown = (text: string) => {
     return text.split('\n').map((line, i) => {
-      // Bold
-      line = line.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>')
       // Bullet points
       if (line.trim().startsWith('- ') || line.trim().startsWith('• '))
-        return <p key={i} className="flex gap-2.5 ml-1"><span className="text-emerald-400 mt-0.5 shrink-0">&#9654;</span><span dangerouslySetInnerHTML={{ __html: line.trim().slice(2) }} /></p>
+        return <p key={i} className="flex gap-2.5 ml-1"><span className="text-emerald-400 mt-0.5 shrink-0">&#9654;</span><span>{renderInline(line.trim().slice(2))}</span></p>
       // Numbered
       if (/^\d+\.\s/.test(line.trim()))
-        return <p key={i} className="flex gap-2.5 ml-1"><span className="text-emerald-400/70 shrink-0">{line.trim().match(/^(\d+\.)/)?.[1]}</span><span dangerouslySetInnerHTML={{ __html: line.trim().replace(/^\d+\.\s/, '') }} /></p>
+        return <p key={i} className="flex gap-2.5 ml-1"><span className="text-emerald-400/70 shrink-0">{line.trim().match(/^(\d+\.)/)?.[1]}</span><span>{renderInline(line.trim().replace(/^\d+\.\s/, ''))}</span></p>
       // Headers
       if (line.startsWith('##'))
-        return <p key={i} className="text-[13px] font-bold text-white mt-3 mb-1" dangerouslySetInnerHTML={{ __html: line.replace(/^#+\s*/, '') }} />
+        return <p key={i} className="text-[13px] font-bold text-white mt-3 mb-1">{renderInline(line.replace(/^#+\s*/, ''))}</p>
       if (line.startsWith('#'))
-        return <p key={i} className="text-sm font-bold text-white mt-2" dangerouslySetInnerHTML={{ __html: line.replace(/^#+\s*/, '') }} />
+        return <p key={i} className="text-sm font-bold text-white mt-2">{renderInline(line.replace(/^#+\s*/, ''))}</p>
       if (line.trim() === '') return <div key={i} className="h-2" />
-      return <p key={i} dangerouslySetInnerHTML={{ __html: line }} />
+      return <p key={i}>{renderInline(line)}</p>
     })
   }
 

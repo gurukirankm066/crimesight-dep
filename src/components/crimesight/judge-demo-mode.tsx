@@ -22,8 +22,9 @@ const steps = [
 
 export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand }: Props) {
   const [step, setStep] = useState(0)
-  const [approved, setApproved] = useState(false)
   const setActiveTab = useCrimeSightStore(s => s.setActiveTab)
+  const reviewActions = useCrimeSightStore(s => s.reviewActions)
+  const recordReviewAction = useCrimeSightStore(s => s.recordReviewAction)
 
   const featuredCase = useMemo(
     () => GENERATED_CASES.find(item => item.priority === 'Critical' && item.hasRepeatOffender) ?? GENERATED_CASES[0],
@@ -33,7 +34,6 @@ export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand }: Prop
   useEffect(() => {
     if (!open) return
     setStep(0)
-    setApproved(false)
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
     }
@@ -42,6 +42,8 @@ export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand }: Prop
   }, [open, onClose])
 
   if (!open) return null
+
+  const approved = reviewActions.find(action => action.firId === featuredCase.rowid)?.status === 'Approved'
 
   const openOperations = () => {
     setActiveTab('operations')
@@ -122,7 +124,7 @@ export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand }: Prop
             <div className="space-y-5">
               <div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400">Human authority</p><h3 className="mt-1 text-xl font-bold text-white">A person makes the operational decision.</h3><p className="mt-2 text-sm text-slate-400">The system presents evidence cues. A supervisor chooses whether the item deserves review and the action is recorded in the prototype audit trail.</p></div>
               <div className={`rounded-xl border p-5 ${approved ? 'border-emerald-400/30 bg-emerald-500/[0.08]' : 'border-white/[0.08] bg-[#0d1623]'}`}>
-                {approved ? <div className="flex items-start gap-3"><CheckCircle2 className="mt-0.5 size-6 shrink-0 text-emerald-400" /><div><p className="font-semibold text-emerald-200">Review approved by prototype supervisor</p><p className="mt-1 text-xs leading-relaxed text-slate-400">A visible audit event has been created in the Actions workspace. The FIR remains subject to normal human investigation.</p></div></div> : <><p className="text-sm font-semibold text-white">Recommended action: review linked FIRs and nominate a lead investigator.</p><p className="mt-1 text-xs leading-relaxed text-slate-400">Approval does not trigger enforcement. It only records a supervisor&apos;s decision to review the case.</p><Button onClick={() => setApproved(true)} className="mt-4 bg-emerald-600 text-xs hover:bg-emerald-500"><CheckCircle2 className="mr-1.5 size-3.5" /> Approve review</Button></>}
+                {approved ? <div className="flex items-start gap-3"><CheckCircle2 className="mt-0.5 size-6 shrink-0 text-emerald-400" /><div><p className="font-semibold text-emerald-200">Review approved by prototype supervisor</p><p className="mt-1 text-xs leading-relaxed text-slate-400">The shared Actions workspace now carries this audit entry. The FIR remains subject to normal human investigation.</p></div></div> : <><p className="text-sm font-semibold text-white">Recommended action: review linked FIRs and nominate a lead investigator.</p><p className="mt-1 text-xs leading-relaxed text-slate-400">Approval does not trigger enforcement. It only records a supervisor&apos;s decision to review the case.</p><Button onClick={() => recordReviewAction({ firId: featuredCase.rowid, fir: featuredCase.fir, status: 'Approved', actor: 'Prototype supervisor', reason: 'Review linked FIRs and nominate a lead investigator.' })} className="mt-4 bg-emerald-600 text-xs hover:bg-emerald-500"><CheckCircle2 className="mr-1.5 size-3.5" /> Approve review</Button></>}
               </div>
             </div>
           )}
