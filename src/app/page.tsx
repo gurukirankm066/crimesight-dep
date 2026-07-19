@@ -31,6 +31,7 @@ import HelpWidget from '@/components/crimesight/help-widget'
 import { TabErrorBoundary } from '@/components/crimesight/error-boundary'
 import SuspectDossier from '@/components/crimesight/suspect-dossier'
 import JudgeDemoMode from '@/components/crimesight/judge-demo-mode'
+import CaseCommandCard from '@/components/crimesight/case-command-card'
 import { toast } from 'sonner'
 import { useCrimeSightStore } from '@/lib/store'
 
@@ -98,6 +99,7 @@ export default function Home() {
   const [showAiReport, setShowAiReport] = useState(false)
   const [showTimeline, setShowTimeline] = useState(false)
   const [showJudgeDemo, setShowJudgeDemo] = useState(false)
+  const [showCaseCommand, setShowCaseCommand] = useState(false)
   const prevTabRef = useRef(activeTab)
 
   // ⌘K shortcut
@@ -444,7 +446,8 @@ export default function Home() {
           sourceCaseFir={dossierSourceFir}
         />
 
-        <JudgeDemoMode open={showJudgeDemo} onClose={() => setShowJudgeDemo(false)} />
+        <JudgeDemoMode open={showJudgeDemo} onClose={() => setShowJudgeDemo(false)} onOpenCaseCommand={() => { setShowJudgeDemo(false); setShowCaseCommand(true) }} />
+        <CaseCommandCard open={showCaseCommand} onClose={() => setShowCaseCommand(false)} />
 
         {/* ═══ FOOTER — AI Chat Prominent ═══ */}
         <footer className="shrink-0 relative z-10 border-t border-white/[0.06] bg-[#060a12]/95 backdrop-blur-sm">

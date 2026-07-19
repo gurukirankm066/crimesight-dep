@@ -10,6 +10,7 @@ import { useCrimeSightStore } from '@/lib/store'
 interface Props {
   open: boolean
   onClose: () => void
+  onOpenCaseCommand: () => void
 }
 
 const steps = [
@@ -19,10 +20,9 @@ const steps = [
   { label: 'Human decision', icon: ClipboardCheck },
 ] as const
 
-export default function JudgeDemoMode({ open, onClose }: Props) {
+export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand }: Props) {
   const [step, setStep] = useState(0)
   const [approved, setApproved] = useState(false)
-  const navigateToFir = useCrimeSightStore(s => s.navigateToFir)
   const setActiveTab = useCrimeSightStore(s => s.setActiveTab)
 
   const featuredCase = useMemo(
@@ -42,11 +42,6 @@ export default function JudgeDemoMode({ open, onClose }: Props) {
   }, [open, onClose])
 
   if (!open) return null
-
-  const openCase = () => {
-    navigateToFir(featuredCase.rowid)
-    onClose()
-  }
 
   const openOperations = () => {
     setActiveTab('operations')
@@ -136,7 +131,7 @@ export default function JudgeDemoMode({ open, onClose }: Props) {
         <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.07] bg-black/15 px-4 py-3 sm:px-6">
           <Button variant="ghost" size="sm" onClick={() => step === 0 ? onClose() : setStep(current => current - 1)} className="text-xs text-slate-400 hover:text-white"><ChevronLeft className="mr-1 size-3.5" /> {step === 0 ? 'Exit' : 'Back'}</Button>
           <div className="flex items-center gap-2">
-            {step === 2 && <Button variant="outline" size="sm" onClick={openCase} className="border-white/10 bg-white/[0.03] text-xs text-slate-200 hover:bg-white/[0.08]">Open FIR record</Button>}
+            {step === 2 && <Button variant="outline" size="sm" onClick={onOpenCaseCommand} className="border-cyan-500/20 bg-cyan-500/[0.06] text-xs text-cyan-100 hover:bg-cyan-500/[0.12]">Open case command card</Button>}
             {step === 3 && approved && <Button size="sm" onClick={openOperations} className="bg-emerald-600 text-xs hover:bg-emerald-500">View audit trail</Button>}
             {step < steps.length - 1 && <Button size="sm" onClick={() => setStep(current => current + 1)} className="bg-emerald-600 text-xs hover:bg-emerald-500">Next <ChevronRight className="ml-1 size-3.5" /></Button>}
           </div>
