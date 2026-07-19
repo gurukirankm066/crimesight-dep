@@ -12,7 +12,8 @@ import { useCrimeSightStore, type TickerItem } from '@/lib/store'
 import { DEMO_DISTRICTS, getDemoDistrictName } from '@/lib/demo-data'
 import { getDistrictMapData, getGeneratedStats, getRecentCases, getCasesByDistrict } from '@/lib/case-generator'
 import LastSynced from '@/components/crimesight/last-synced'
-import type { FeatureCollection, GeoJsonProperties, Feature } from 'geojson'
+import karnatakaGeojson from '@/data/karnataka-geojson'
+import type { GeoJsonProperties, Feature } from 'geojson'
 
 /* ─── Types ─── */
 interface DistrictData {
@@ -172,7 +173,6 @@ function timeAgo(dateStr: string): string {
 
 /* ─── Component ─── */
 export default function CrimeMapTab() {
-  const [geojson, setGeojson] = useState<FeatureCollection | null>(null)
   const [mapStats, setMapStats] = useState<DistrictData[]>([])
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null)
   const [alerts, setAlerts] = useState<AlertData[]>([])
@@ -243,11 +243,6 @@ export default function CrimeMapTab() {
     ]
   }, [dashboardStats])
 
-  /* ─── Fetch GeoJSON ─── */
-  useEffect(() => {
-    fetch('/karnataka.geojson').then(res => res.json()).then(data => setGeojson(data)).catch(() => {})
-  }, [])
-
   /* ─── Use 10K generated data directly ─── */
   useEffect(() => {
     const genDistricts = getDistrictMapData().map(d => ({
@@ -309,14 +304,13 @@ export default function CrimeMapTab() {
 
   /* ─── D3 projection ─── */
   const { projection, pathGenerator } = useMemo(() => {
-    if (!geojson) return { projection: null, pathGenerator: null }
     const fitTarget = drillDown && selectedFeature
       ? { type: 'FeatureCollection' as const, features: [selectedFeature] }
-      : geojson
+      : karnatakaGeojson
     const padding = drillDown ? 40 : 20
     const proj = geoMercator().fitExtent([[padding, padding], [svgDimensions.width - padding, svgDimensions.height - padding]], fitTarget)
     return { projection: proj, pathGenerator: geoPath().projection(proj) }
-  }, [geojson, svgDimensions, drillDown, selectedFeature])
+  }, [svgDimensions, drillDown, selectedFeature])
 
   /* ─── Handle district click ─── */
   const handleDistrictClick = useCallback(async (geoName: string, feature: Feature) => {
@@ -494,7 +488,7 @@ export default function CrimeMapTab() {
           <div ref={containerRef} className="w-full h-full" onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}>
             <svg ref={svgRef} width={svgDimensions.width} height={svgDimensions.height} viewBox={`0 0 ${svgDimensions.width} ${svgDimensions.height}`} className="w-full h-full" role="img">
               <title>Karnataka District Crime Map</title>
-              {geojson && pathGenerator && projection && geojson.features.map((feature, i) => {
+              {pathGenerator && projection && karnatakaGeojson.features.map((feature, i) => {
                 const geoName = (feature.properties as GeoJsonProperties)?.NAME_2 as string
                 const dbName = GEOJSON_TO_DB[geoName] || geoName
                 const data = districtDataMap[dbName]
