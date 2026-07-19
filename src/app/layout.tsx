@@ -3,6 +3,10 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from 'sonner';
+import { getFoundryReadiness } from '@/lib/foundry/ontology';
+import { listFoundryFirs } from '@/lib/foundry/client';
+
+export const dynamic = 'force-dynamic';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,16 +36,28 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const readiness = getFoundryReadiness();
+  let sync = null;
+  if (readiness.configured) {
+    try {
+      sync = await listFoundryFirs();
+    } catch {
+      // Keep the prototype available with its local synthetic fallback.
+    }
+  }
+  const foundryBootstrap = JSON.stringify({ readiness, sync }).replace(/</g, '\\u003c');
+
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#0a0f1a] text-slate-200 overflow-hidden`}
       >
+        <script dangerouslySetInnerHTML={{ __html: `window.__CRIMESIGHT_FOUNDRY__=${foundryBootstrap};` }} />
         {children}
         <Toaster />
         <SonnerToaster

@@ -46,6 +46,12 @@ interface FoundrySyncResponse {
   data: Array<Omit<ReviewCase, 'rowid' | 'daysAgo'> & { id: string }>
 }
 
+declare global {
+  interface Window {
+    __CRIMESIGHT_FOUNDRY__?: { readiness: FoundryStatus; sync: FoundrySyncResponse | null }
+  }
+}
+
 const priorityStyle: Record<string, string> = {
   Critical: 'border-red-500/30 bg-red-500/10 text-red-300',
   High: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
@@ -98,6 +104,11 @@ export default function OperationsTab() {
   const [foundry, setFoundry] = useState<FoundryStatus | null>(null)
 
   useEffect(() => {
+    const bootstrap = window.__CRIMESIGHT_FOUNDRY__
+    if (bootstrap) {
+      setFoundry(bootstrap.readiness)
+      return
+    }
     fetch('/api/foundry/status')
       .then(response => response.ok ? response.json() : null)
       .then((status: FoundryStatus | null) => setFoundry(status))
@@ -105,6 +116,14 @@ export default function OperationsTab() {
   }, [])
 
   useEffect(() => {
+    const bootstrap = window.__CRIMESIGHT_FOUNDRY__
+    if (bootstrap?.sync?.data?.length) {
+      const foundryCases: ReviewCase[] = bootstrap.sync.data.map(item => ({ ...item, rowid: item.id, daysAgo: 0 }))
+      setQueue(deriveQueue(foundryCases, 'foundry'))
+      setQueueSource('foundry')
+      setSyncedAt(bootstrap.sync.syncedAt)
+      return
+    }
     fetch('/api/foundry/fir-cases', { cache: 'no-store' })
       .then(response => response.ok ? response.json() : null)
       .then((result: FoundrySyncResponse | null) => {
