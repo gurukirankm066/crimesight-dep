@@ -581,7 +581,7 @@ export default function AIAnalysisTab() {
           </Badge>
         </div>
         <span className="text-[10px] text-slate-500 normal-case tracking-normal font-normal">
-          {GENERATED_CASES.length} cases · AI-powered scan for statistical anomalies in crime patterns, timing &amp; spatial distribution
+          {GENERATED_CASES.length} cases · transparent statistical scan for review signals in crime patterns, timing &amp; spatial distribution
         </span>
         <LastSynced />
       </div>
@@ -719,11 +719,11 @@ export default function AIAnalysisTab() {
         ))}
       </div>
 
-      {/* Predictive Insights */}
+      {/* Statistical review signals */}
       <div className="flex items-center justify-between mb-6 mt-6">
         <div className="flex items-center gap-2.5">
           <Zap className="size-4 text-violet-400" />
-          <h3 className="text-[13px] font-semibold text-slate-300 uppercase tracking-wider">Predictive Risk Assessment — SCRB Intelligence Wing</h3>
+          <h3 className="text-[13px] font-semibold text-slate-300 uppercase tracking-wider">Statistical Review Signals — SCRB Intelligence Wing</h3>
           <Badge variant="outline" className="text-[9px] px-1.5 text-slate-400 border-slate-500/20 bg-slate-500/5">
             Statistical Computing
           </Badge>
