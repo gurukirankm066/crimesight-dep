@@ -45,7 +45,7 @@ export default function RootLayout({
         {children}
         <Toaster />
         <SonnerToaster
-          position="top-right"
+          position="bottom-left"
           visibleToasts={1}
           closeButton
           toastOptions={{

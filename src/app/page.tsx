@@ -124,39 +124,37 @@ export default function Home() {
     // Those users still receive the unread indicator and can open the alert panel.
     if (window.matchMedia('(max-width: 1023px)').matches) return
 
-    const recentCases = getRecentCases(20)
+    const criticalCases = getRecentCases(30).filter(c => c.priority === 'Critical')
+    if (!criticalCases.length) return
 
     let alertIndex = 0
     const intervalRef: { current: ReturnType<typeof setInterval> | null } = { current: null }
 
     const showNextAlert = () => {
-      const c = recentCases[alertIndex % recentCases.length]
-      const priorityColor = c.priority === 'Critical' ? 'text-red-400' : c.priority === 'High' ? 'text-amber-400' : 'text-slate-300'
+      const c = criticalCases[alertIndex % criticalCases.length]
 
-      toast.custom(() => (
-        <div className="flex items-start gap-3 bg-[#111827] border border-white/[0.08] rounded-lg px-4 py-3 shadow-xl shadow-black/40 min-w-[280px] max-w-[calc(100vw-2rem)]">
-          <div className={`size-2 rounded-full mt-1.5 shrink-0 ${c.priority === 'Critical' ? 'bg-red-500 animate-pulse' : c.priority === 'High' ? 'bg-amber-500' : 'bg-slate-500'}`} />
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">
-              {c.daysAgo === 0 ? 'New Intelligence' : 'Intelligence Alert'}
-            </p>
-            <p className={`text-[12px] font-semibold ${priorityColor} mt-0.5`}>{c.crimeType} — {c.district}</p>
-            <p className="text-[10px] text-slate-500 mt-0.5 font-mono">{c.fir}</p>
-          </div>
-        </div>
-      ), { duration: 4000, position: 'top-right' })
-
-      alertIndex++
       setNewAlerts(prev => prev + 1)
       incrementLivePulse()
+
+      toast.custom(() => (
+        <div className="flex items-center gap-2.5 bg-[#111827]/95 border border-red-500/20 rounded-lg px-3 py-2.5 shadow-lg shadow-black/30 w-[280px] max-w-[calc(100vw-2rem)]">
+          <div className="size-2 rounded-full shrink-0 bg-red-500 animate-pulse" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[9px] text-red-300/80 uppercase tracking-wider font-semibold">Critical intelligence update</p>
+            <p className="text-[12px] font-semibold text-slate-100 truncate">{c.crimeType} <span className="text-slate-400 font-normal">· {c.district}</span></p>
+          </div>
+        </div>
+      ), { duration: 3000, position: 'bottom-left' })
+
+      alertIndex++
     }
 
     const initialTimeout = setTimeout(() => {
       showNextAlert()
       intervalRef.current = setInterval(() => {
         showNextAlert()
-      }, 45000)
-    }, 12000)
+      }, 90000)
+    }, 20000)
 
     return () => {
       clearTimeout(initialTimeout)
