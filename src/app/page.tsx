@@ -37,13 +37,14 @@ import { useCrimeSightStore } from '@/lib/store'
 const tabs = [
   { value: 'map', label: 'Geo Intel', icon: Map, shortLabel: 'GEO' },
   { value: 'dashboard', label: 'Command', icon: BarChart3, shortLabel: 'CMD' },
+  // Keep governed workflow visible before the lower-priority analytical tabs on compact headers.
+  { value: 'operations', label: 'Actions', icon: ClipboardCheck, shortLabel: 'ACT' },
   { value: 'trends', label: 'Stats', icon: TrendingUp, shortLabel: 'STAT' },
   { value: 'network', label: 'Network', icon: GitBranch, shortLabel: 'LNK' },
   { value: 'most-wanted', label: 'Targets', icon: Target, shortLabel: 'TGT' },
   { value: 'cases', label: 'FIRs', icon: FileText, shortLabel: 'FIR' },
   { value: 'ai', label: 'Predict', icon: Brain, shortLabel: 'AI' },
   { value: 'brief', label: 'Morning Brief', icon: Sun, shortLabel: 'BRIEF' },
-  { value: 'operations', label: 'Actions', icon: ClipboardCheck, shortLabel: 'ACT' },
 ] as const
 
 const tabComponents: Record<string, React.FC> = {
