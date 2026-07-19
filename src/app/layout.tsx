@@ -4,7 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from 'sonner';
 import { getFoundryReadiness } from '@/lib/foundry/ontology';
-import { listFoundryFirs } from '@/lib/foundry/client';
+import { listFoundryFirs, type FoundryFirSync } from '@/lib/foundry/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,7 +42,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const readiness = getFoundryReadiness();
-  let sync = null;
+  let sync: FoundryFirSync | null = null;
   if (readiness.configured) {
     try {
       sync = await listFoundryFirs();
