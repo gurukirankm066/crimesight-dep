@@ -30,6 +30,7 @@ import InvestigationTimeline from '@/components/crimesight/investigation-timelin
 import HelpWidget from '@/components/crimesight/help-widget'
 import { TabErrorBoundary } from '@/components/crimesight/error-boundary'
 import SuspectDossier from '@/components/crimesight/suspect-dossier'
+import JudgeDemoMode from '@/components/crimesight/judge-demo-mode'
 import { toast } from 'sonner'
 import { useCrimeSightStore } from '@/lib/store'
 
@@ -96,6 +97,7 @@ export default function Home() {
   const [showBriefing, setShowBriefing] = useState(false)
   const [showAiReport, setShowAiReport] = useState(false)
   const [showTimeline, setShowTimeline] = useState(false)
+  const [showJudgeDemo, setShowJudgeDemo] = useState(false)
   const prevTabRef = useRef(activeTab)
 
   // ⌘K shortcut
@@ -243,6 +245,15 @@ export default function Home() {
 
             {/* Right: Actions */}
             <div className="ml-auto flex items-center gap-1 shrink-0">
+              <button
+                onClick={() => setShowJudgeDemo(true)}
+                className="hidden md:flex items-center gap-1.5 h-7 px-2 rounded-md border border-emerald-500/20 bg-emerald-500/[0.08] text-[10px] font-semibold text-emerald-300 hover:bg-emerald-500/[0.15] transition-colors"
+                aria-label="Start judge demo"
+              >
+                <Shield className="size-3" />
+                <span className="hidden xl:inline">Demo Mode</span>
+                <span className="xl:hidden">Demo</span>
+              </button>
               {/* Voice FIR — accessible via ⌘K */}
               <button
                 onClick={() => setShowVoiceFir(true)}
@@ -432,6 +443,8 @@ export default function Home() {
           suspectName={dossierSuspectName}
           sourceCaseFir={dossierSourceFir}
         />
+
+        <JudgeDemoMode open={showJudgeDemo} onClose={() => setShowJudgeDemo(false)} />
 
         {/* ═══ FOOTER — AI Chat Prominent ═══ */}
         <footer className="shrink-0 relative z-10 border-t border-white/[0.06] bg-[#060a12]/95 backdrop-blur-sm">
