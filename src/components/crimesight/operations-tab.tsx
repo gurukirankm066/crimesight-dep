@@ -9,8 +9,23 @@ import { useCrimeSightStore } from '@/lib/store'
 
 type ReviewStatus = 'Awaiting review' | 'Approved' | 'Needs evidence'
 
+interface ReviewCase {
+  rowid: string
+  fir: string
+  crimeType: string
+  crimeCategory: string
+  district: string
+  priority: string
+  status: string
+  riskScore: number
+  isSensitive: boolean
+  hasRepeatOffender: boolean
+  daysAgo: number
+}
+
 interface QueueItem {
-  case: GeneratedCase
+  case: ReviewCase
+  source: 'local' | 'foundry'
   signal: string
   recommendation: string
   reason: string
@@ -18,10 +33,17 @@ interface QueueItem {
 
 interface FoundryStatus {
   configured: boolean
-  mode: 'not-configured' | 'ready-for-connection'
+  mode: 'not-configured' | 'token-ready' | 'oauth-ready'
   missing: string[]
   ontologyObjectCount: number
   actionCount: number
+}
+
+interface FoundrySyncResponse {
+  source: 'foundry'
+  ontology: string
+  syncedAt: string
+  data: Array<Omit<ReviewCase, 'rowid' | 'daysAgo'> & { id: string }>
 }
 
 const priorityStyle: Record<string, string> = {
@@ -31,13 +53,30 @@ const priorityStyle: Record<string, string> = {
   Low: 'border-slate-500/30 bg-slate-500/10 text-slate-300',
 }
 
-function deriveQueue(): QueueItem[] {
-  return GENERATED_CASES
+function toReviewCase(caseItem: GeneratedCase): ReviewCase {
+  return {
+    rowid: caseItem.rowid,
+    fir: caseItem.fir,
+    crimeType: caseItem.crimeType,
+    crimeCategory: caseItem.crimeCategory,
+    district: caseItem.district,
+    priority: caseItem.priority,
+    status: caseItem.status,
+    riskScore: caseItem.riskScore,
+    isSensitive: caseItem.isSensitive,
+    hasRepeatOffender: caseItem.hasRepeatOffender,
+    daysAgo: caseItem.daysAgo,
+  }
+}
+
+function deriveQueue(cases: ReviewCase[], source: QueueItem['source']): QueueItem[] {
+  return cases
     .filter(c => c.priority === 'Critical' || c.priority === 'High')
     .sort((a, b) => b.riskScore - a.riskScore || a.daysAgo - b.daysAgo)
     .slice(0, 5)
     .map(c => ({
       case: c,
+      source,
       signal: c.hasRepeatOffender ? 'Repeat-pattern signal' : c.isSensitive ? 'Sensitive-case safeguard' : 'High-priority triage',
       recommendation: c.hasRepeatOffender
         ? 'Review related FIRs and nominate a lead investigator.'
@@ -49,7 +88,10 @@ function deriveQueue(): QueueItem[] {
 }
 
 export default function OperationsTab() {
-  const queue = useMemo(() => deriveQueue(), [])
+  const localQueue = useMemo(() => deriveQueue(GENERATED_CASES.map(toReviewCase), 'local'), [])
+  const [queue, setQueue] = useState<QueueItem[]>(localQueue)
+  const [queueSource, setQueueSource] = useState<QueueItem['source']>('local')
+  const [syncedAt, setSyncedAt] = useState<string | null>(null)
   const navigateToFir = useCrimeSightStore(s => s.navigateToFir)
   const [statuses, setStatuses] = useState<Record<string, ReviewStatus>>({})
   const [audit, setAudit] = useState<string[]>([])
@@ -60,6 +102,19 @@ export default function OperationsTab() {
       .then(response => response.ok ? response.json() : null)
       .then((status: FoundryStatus | null) => setFoundry(status))
       .catch(() => setFoundry(null))
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/foundry/fir-cases', { cache: 'no-store' })
+      .then(response => response.ok ? response.json() : null)
+      .then((result: FoundrySyncResponse | null) => {
+        if (!result?.data?.length) return
+        const foundryCases: ReviewCase[] = result.data.map(item => ({ ...item, rowid: item.id, daysAgo: 0 }))
+        setQueue(deriveQueue(foundryCases, 'foundry'))
+        setQueueSource('foundry')
+        setSyncedAt(result.syncedAt)
+      })
+      .catch(() => undefined)
   }, [])
 
   const changeStatus = (item: QueueItem, status: ReviewStatus) => {
@@ -103,7 +158,7 @@ export default function OperationsTab() {
           <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3.5">
             <div>
               <h3 className="flex items-center gap-2 text-sm font-bold text-white"><ClipboardCheck className="size-4 text-emerald-400" /> Recommended review queue</h3>
-              <p className="mt-0.5 text-[11px] text-slate-500">Synthetic prototype data · ranked by transparent rule-based signals</p>
+              <p className="mt-0.5 text-[11px] text-slate-500">{queueSource === 'foundry' ? 'Live read-only Foundry FIR objects · ranked by transparent rule-based signals' : 'Synthetic prototype fallback · ranked by transparent rule-based signals'}</p>
             </div>
             <Badge variant="outline" className="border-amber-500/20 bg-amber-500/[0.06] text-[10px] text-amber-300">Human approval required</Badge>
           </div>
@@ -125,7 +180,9 @@ export default function OperationsTab() {
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <Badge className={`text-[9px] ${status === 'Approved' ? 'bg-emerald-500/15 text-emerald-300' : status === 'Needs evidence' ? 'bg-sky-500/15 text-sky-300' : 'bg-slate-500/15 text-slate-300'}`}>{status}</Badge>
-                      <Button size="sm" variant="outline" onClick={() => navigateToFir(item.case.rowid)} className="h-7 border-white/10 bg-white/[0.02] px-2 text-[10px] text-slate-300 hover:bg-white/[0.06]"><Eye className="mr-1 size-3" /> Open</Button>
+                      {item.source === 'local'
+                        ? <Button size="sm" variant="outline" onClick={() => navigateToFir(item.case.rowid)} className="h-7 border-white/10 bg-white/[0.02] px-2 text-[10px] text-slate-300 hover:bg-white/[0.06]"><Eye className="mr-1 size-3" /> Open</Button>
+                        : <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/[0.05] text-[9px] text-emerald-300">Foundry synced</Badge>}
                     </div>
                   </div>
                   {status === 'Awaiting review' && (
@@ -144,9 +201,9 @@ export default function OperationsTab() {
           <section className="rounded-xl border border-white/[0.07] bg-[#0d141f]/85 p-4">
             <div className="flex items-start justify-between gap-2">
               <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-300"><Database className="size-3.5 text-emerald-400" /> Foundry / AIP readiness</h3>
-              <Badge className={`text-[9px] ${foundry?.configured ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-500/15 text-slate-300'}`}>{foundry?.configured ? 'Ready' : 'Sandbox mode'}</Badge>
+              <Badge className={`text-[9px] ${queueSource === 'foundry' ? 'bg-emerald-500/15 text-emerald-300' : foundry?.configured ? 'bg-amber-500/15 text-amber-300' : 'bg-slate-500/15 text-slate-300'}`}>{queueSource === 'foundry' ? 'Live sync' : foundry?.configured ? 'Connecting' : 'Sandbox mode'}</Badge>
             </div>
-            {foundry ? <div className="mt-3 space-y-2 text-[11px] leading-relaxed text-slate-500"><p>{foundry.ontologyObjectCount} Ontology objects and {foundry.actionCount} governed actions are mapped.</p><p>{foundry.configured ? 'Server-side Foundry credentials are configured. Connection validation is the next controlled deployment step.' : 'No Foundry credentials are exposed in this demo. Add server-side OAuth settings to enable the connector.'}</p></div> : <p className="mt-3 text-[11px] text-slate-500">Checking secure connector readiness…</p>}
+            {foundry ? <div className="mt-3 space-y-2 text-[11px] leading-relaxed text-slate-500"><p>{foundry.ontologyObjectCount} Ontology objects and {foundry.actionCount} governed actions are mapped.</p><p>{queueSource === 'foundry' ? `Read-only FIR sync active${syncedAt ? ` · updated ${new Date(syncedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })}` : ''}. Human approvals remain inside CrimeSight.` : foundry.configured ? 'Server-side Foundry credentials are configured. The queue will fall back safely until an authorised FIR read succeeds.' : 'No Foundry credentials are exposed in this demo. Add a server-side token to enable the connector.'}</p></div> : <p className="mt-3 text-[11px] text-slate-500">Checking secure connector readiness…</p>}
           </section>
           <section className="rounded-xl border border-white/[0.07] bg-[#0d141f]/85 p-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">Decision safeguards</h3>

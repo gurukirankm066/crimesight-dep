@@ -2,7 +2,7 @@
 
 ## What is already built
 
-CrimeSight has an Ontology contract and a safe readiness endpoint. The prototype continues to run without Foundry credentials, but it now has canonical object types, links, and governed actions ready to map to Foundry.
+CrimeSight has an Ontology contract, a safe readiness endpoint, and a read-only FIR sync route. The browser never calls Foundry directly; the server reads authorised FIR objects and keeps the token private.
 
 ## Build this in Foundry
 
@@ -19,16 +19,19 @@ Create the links and actions listed in `src/lib/foundry/ontology.ts`. Every acti
 
 ## Configure the deployment
 
-Set these as server-side deployment secrets only. Do not use `NEXT_PUBLIC_` variables.
+Set these as server-side deployment secrets only. Do not use `NEXT_PUBLIC_` variables. For this prototype, a Foundry personal token is supported for read-only demo access; production deployments should use a scoped OAuth service application instead.
 
 ```text
 FOUNDRY_BASE_URL=https://your-foundry-tenant
+FOUNDRY_API_TOKEN=...
+# Optional: auto-discovery is used when omitted.
+FOUNDRY_FIR_OBJECT_TYPE=FirCase
 FOUNDRY_OAUTH_CLIENT_ID=...
 FOUNDRY_OAUTH_CLIENT_SECRET=...
 FOUNDRY_ONTOLOGY_API_NAME=crimesight
 ```
 
-Then generate an Ontology SDK or configure the approved Foundry REST/OAuth client inside a server-only adapter. The browser must call CrimeSight API routes, never Foundry directly.
+The server route `GET /api/foundry/fir-cases` discovers the accessible Ontology, reads up to 100 FIR Case objects through Foundry's REST API, and returns only the fields required by the Actions queue. The browser must call CrimeSight API routes, never Foundry directly.
 
 ## AIP workflow to demo
 

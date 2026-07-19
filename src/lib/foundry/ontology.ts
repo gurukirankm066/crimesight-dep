@@ -8,7 +8,7 @@
 
 export const CRIMESIGHT_ONTOLOGY = {
   objectTypes: [
-    { apiName: 'firCase', label: 'FIR Case', key: 'firNumber', source: 'CaseMaster' },
+    { apiName: 'FirCase', label: 'FIR Case', key: 'firNumber', source: 'CaseMaster' },
     { apiName: 'person', label: 'Person', key: 'personId', source: 'Suspect / Victim / Witness' },
     { apiName: 'location', label: 'Location', key: 'locationId', source: 'Case location / Police Station' },
     { apiName: 'district', label: 'District', key: 'districtCode', source: 'District' },
@@ -34,23 +34,28 @@ export const CRIMESIGHT_ONTOLOGY = {
 
 export type FoundryReadiness = {
   configured: boolean
-  mode: 'not-configured' | 'ready-for-connection'
+  mode: 'not-configured' | 'token-ready' | 'oauth-ready'
   missing: string[]
   ontologyObjectCount: number
   actionCount: number
 }
 
 export function getFoundryReadiness(): FoundryReadiness {
-  const required = {
+  const tokenConnection = {
+    FOUNDRY_BASE_URL: process.env.FOUNDRY_BASE_URL,
+    FOUNDRY_API_TOKEN: process.env.FOUNDRY_API_TOKEN,
+  }
+  const oauthConnection = {
     FOUNDRY_BASE_URL: process.env.FOUNDRY_BASE_URL,
     FOUNDRY_OAUTH_CLIENT_ID: process.env.FOUNDRY_OAUTH_CLIENT_ID,
     FOUNDRY_OAUTH_CLIENT_SECRET: process.env.FOUNDRY_OAUTH_CLIENT_SECRET,
-    FOUNDRY_ONTOLOGY_API_NAME: process.env.FOUNDRY_ONTOLOGY_API_NAME,
   }
-  const missing = Object.entries(required).filter(([, value]) => !value).map(([key]) => key)
+  const tokenReady = Object.values(tokenConnection).every(Boolean)
+  const oauthReady = Object.values(oauthConnection).every(Boolean)
+  const missing = Object.entries(tokenConnection).filter(([, value]) => !value).map(([key]) => key)
   return {
-    configured: missing.length === 0,
-    mode: missing.length === 0 ? 'ready-for-connection' : 'not-configured',
+    configured: tokenReady || oauthReady,
+    mode: tokenReady ? 'token-ready' : oauthReady ? 'oauth-ready' : 'not-configured',
     missing,
     ontologyObjectCount: CRIMESIGHT_ONTOLOGY.objectTypes.length,
     actionCount: CRIMESIGHT_ONTOLOGY.actionTypes.length,
