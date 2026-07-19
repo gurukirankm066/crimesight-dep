@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Shield, BarChart3, TrendingUp, GitBranch, Target, FileText, Brain, Map,
-  Search, Bell, Mic, ClipboardEdit, Sun
+  Search, Bell, Mic, ClipboardEdit, Sun, ClipboardCheck
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { getRecentCases, getTickerItems } from '@/lib/case-generator'
@@ -16,6 +16,7 @@ import MostWantedTab from '@/components/crimesight/most-wanted-tab'
 import CasesTab from '@/components/crimesight/cases-tab'
 import AIAnalysisTab from '@/components/crimesight/ai-analysis-tab'
 import MorningBriefTab from '@/components/crimesight/morning-brief-tab'
+import OperationsTab from '@/components/crimesight/operations-tab'
 import AIChatBar from '@/components/crimesight/ai-chat-bar'
 import LoginScreen from '@/components/crimesight/login-screen'
 import IntelActivation from '@/components/crimesight/intel-activation'
@@ -42,6 +43,7 @@ const tabs = [
   { value: 'cases', label: 'FIRs', icon: FileText, shortLabel: 'FIR' },
   { value: 'ai', label: 'Predict', icon: Brain, shortLabel: 'AI' },
   { value: 'brief', label: 'Morning Brief', icon: Sun, shortLabel: 'BRIEF' },
+  { value: 'operations', label: 'Actions', icon: ClipboardCheck, shortLabel: 'ACT' },
 ] as const
 
 const tabComponents: Record<string, React.FC> = {
@@ -53,6 +55,7 @@ const tabComponents: Record<string, React.FC> = {
   cases: CasesTab,
   ai: AIAnalysisTab,
   brief: MorningBriefTab,
+  operations: OperationsTab,
 }
 
 const tabNames: Record<string, string> = {
@@ -64,6 +67,7 @@ const tabNames: Record<string, string> = {
   cases: 'FIR Registry',
   ai: 'Predictive Intel',
   brief: 'Morning Intel Brief',
+  operations: 'Governed Operations Queue',
 }
 
 // ─── Clock ───
@@ -203,7 +207,7 @@ export default function Home() {
                 <h1 className="text-[13px] font-bold text-white tracking-wide uppercase leading-tight">
                   CrimeSight
                 </h1>
-                <p className="text-[10px] text-slate-500 leading-tight">Karnataka State Police · SCRB</p>
+                <p className="text-[10px] text-slate-500 leading-tight">Karnataka State Police · Synthetic Prototype</p>
               </div>
             </div>
 
@@ -435,7 +439,7 @@ export default function Home() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-50" />
                 <span className="relative inline-flex rounded-full size-1.5 bg-emerald-500" />
               </span>
-              <span className="text-[10px] text-slate-500 hidden sm:inline">SCRB Online</span>
+              <span className="text-[10px] text-slate-500 hidden sm:inline">Prototype session</span>
             </div>
 
             {/* Center: AI Chat — the star of the footer */}
@@ -445,7 +449,7 @@ export default function Home() {
 
             {/* Right: Sync */}
             <div className="hidden md:flex items-center gap-1.5 shrink-0">
-              <span className="text-[10px] text-slate-600">SCRB v2.1</span>
+              <span className="text-[10px] text-slate-600">Synthetic dataset v1</span>
             </div>
           </div>
         </footer>

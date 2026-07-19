@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type TabValue = 'map' | 'dashboard' | 'trends' | 'network' | 'most-wanted' | 'cases' | 'ai' | 'brief'
+export type TabValue = 'map' | 'dashboard' | 'trends' | 'network' | 'most-wanted' | 'cases' | 'ai' | 'brief' | 'operations'
 
 // ── Field FIR Types ──
 export type FieldFirStatus = 'Submitted' | 'Under Review' | 'Assigned' | 'Under Investigation' | 'Charge Sheet Filed' | 'Closed'

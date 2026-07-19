@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 
-// Always use Supabase PostgreSQL — override any stale env var
-process.env.DATABASE_URL = 'postgresql://postgres.qfdiajswvoodbwpmjscu:Guru%40636070@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres'
+// Database credentials are supplied only through deployment environment variables.
+// Never hard-code operational connection strings in source control.
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
