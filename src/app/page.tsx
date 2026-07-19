@@ -120,6 +120,10 @@ export default function Home() {
   useEffect(() => {
     if (!authenticated) return
 
+    // Pop-up intelligence cards obstruct the limited mobile/tablet workspace.
+    // Those users still receive the unread indicator and can open the alert panel.
+    if (window.matchMedia('(max-width: 1023px)').matches) return
+
     const recentCases = getRecentCases(20)
 
     let alertIndex = 0
@@ -130,7 +134,7 @@ export default function Home() {
       const priorityColor = c.priority === 'Critical' ? 'text-red-400' : c.priority === 'High' ? 'text-amber-400' : 'text-slate-300'
 
       toast.custom(() => (
-        <div className="flex items-start gap-3 bg-[#111827] border border-white/[0.08] rounded-lg px-4 py-3 shadow-xl shadow-black/40 min-w-[300px]">
+        <div className="flex items-start gap-3 bg-[#111827] border border-white/[0.08] rounded-lg px-4 py-3 shadow-xl shadow-black/40 min-w-[280px] max-w-[calc(100vw-2rem)]">
           <div className={`size-2 rounded-full mt-1.5 shrink-0 ${c.priority === 'Critical' ? 'bg-red-500 animate-pulse' : c.priority === 'High' ? 'bg-amber-500' : 'bg-slate-500'}`} />
           <div className="flex-1 min-w-0">
             <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">

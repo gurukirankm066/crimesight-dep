@@ -46,6 +46,8 @@ export default function RootLayout({
         <Toaster />
         <SonnerToaster
           position="top-right"
+          visibleToasts={1}
+          closeButton
           toastOptions={{
             style: { background: 'transparent', border: 'none', boxShadow: 'none', padding: 0 },
           }}
