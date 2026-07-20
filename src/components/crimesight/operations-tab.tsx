@@ -5,6 +5,7 @@ import { CheckCircle2, ClipboardCheck, Eye, MapPin, Network, ShieldCheck, UserCh
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { GENERATED_CASES, type GeneratedCase } from '@/lib/case-generator'
+import { fetchFieldFirReports } from '@/lib/field-fir-client'
 import { useCrimeSightStore, type ReviewStatus } from '@/lib/store'
 
 interface ReviewCase {
@@ -96,6 +97,8 @@ export default function OperationsTab() {
   const hydrateReviewActions = useCrimeSightStore(s => s.hydrateReviewActions)
   const recordReviewAction = useCrimeSightStore(s => s.recordReviewAction)
   const [foundry, setFoundry] = useState<FoundryStatus | null>(null)
+  const [catalystHealth, setCatalystHealth] = useState<'checking' | 'connected' | 'unavailable'>('checking')
+  const [fieldReportCount, setFieldReportCount] = useState<number | null>(null)
 
   const actionByCase = useMemo(() => new Map(reviewActions.map(action => [action.firId, action])), [reviewActions])
 
@@ -109,6 +112,15 @@ export default function OperationsTab() {
   useEffect(() => {
     void hydrateReviewActions()
   }, [hydrateReviewActions])
+
+  useEffect(() => {
+    fetchFieldFirReports()
+      .then(reports => {
+        setFieldReportCount(reports.length)
+        setCatalystHealth('connected')
+      })
+      .catch(() => setCatalystHealth('unavailable'))
+  }, [])
 
   useEffect(() => {
     fetch('/api/foundry/fir-cases', { cache: 'no-store' })
@@ -209,10 +221,26 @@ export default function OperationsTab() {
         <aside className="space-y-4">
           <section className="rounded-xl border border-white/[0.07] bg-[#0d141f]/85 p-4">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-300"><Database className="size-3.5 text-emerald-400" /> Foundry / AIP readiness</h3>
-              <Badge className={`text-[9px] ${queueSource === 'foundry' ? 'bg-emerald-500/15 text-emerald-300' : foundry?.configured ? 'bg-amber-500/15 text-amber-300' : 'bg-slate-500/15 text-slate-300'}`}>{queueSource === 'foundry' ? 'Live sync' : foundry?.configured ? 'Connecting' : 'Sandbox mode'}</Badge>
+              <div>
+                <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-300"><Database className="size-3.5 text-emerald-400" /> System health</h3>
+                <p className="mt-1 text-[10px] text-slate-500">Connector visibility only — no credentials displayed.</p>
+              </div>
+              <Badge className="bg-emerald-500/15 text-[9px] text-emerald-300">Governed demo</Badge>
             </div>
-            {foundry ? <div className="mt-3 space-y-2 text-[11px] leading-relaxed text-slate-500"><p>{foundry.ontologyObjectCount} Ontology objects and {foundry.actionCount} governed actions are mapped.</p><p>{queueSource === 'foundry' ? `Read-only FIR sync active${syncedAt ? ` · updated ${new Date(syncedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })}` : ''}. Human approvals remain inside CrimeSight.` : foundry.configured ? 'Server-side Foundry credentials are configured. The queue will fall back safely until an authorised FIR read succeeds.' : 'No Foundry credentials are exposed in this demo. Add a server-side token to enable the connector.'}</p></div> : <p className="mt-3 text-[11px] text-slate-500">Checking secure connector readiness…</p>}
+            <div className="mt-3 space-y-2">
+              <div className="rounded-md border border-white/[0.06] bg-black/15 p-2.5">
+                <div className="flex items-center justify-between gap-2"><p className="text-[11px] font-semibold text-slate-200">Catalyst field reports</p><Badge className={`text-[9px] ${catalystHealth === 'connected' ? 'bg-emerald-500/15 text-emerald-300' : catalystHealth === 'checking' ? 'bg-amber-500/15 text-amber-300' : 'bg-slate-500/15 text-slate-300'}`}>{catalystHealth === 'connected' ? 'Connected' : catalystHealth === 'checking' ? 'Checking' : 'Fallback ready'}</Badge></div>
+                <p className="mt-1 text-[10px] leading-relaxed text-slate-500">{catalystHealth === 'connected' ? `${fieldReportCount ?? 0} field report${fieldReportCount === 1 ? '' : 's'} available through the Catalyst intake service.` : catalystHealth === 'checking' ? 'Verifying the secure field-report service.' : 'The interface remains usable with local demo data if the service is unavailable.'}</p>
+              </div>
+              <div className="rounded-md border border-white/[0.06] bg-black/15 p-2.5">
+                <div className="flex items-center justify-between gap-2"><p className="text-[11px] font-semibold text-slate-200">Foundry ontology</p><Badge className={`text-[9px] ${queueSource === 'foundry' ? 'bg-emerald-500/15 text-emerald-300' : foundry?.configured ? 'bg-amber-500/15 text-amber-300' : 'bg-slate-500/15 text-slate-300'}`}>{queueSource === 'foundry' ? 'Synced' : foundry?.configured ? 'Ready' : 'Sandbox'}</Badge></div>
+                <p className="mt-1 text-[10px] leading-relaxed text-slate-500">{queueSource === 'foundry' ? `Read-only FIR sync active${syncedAt ? ` · updated ${new Date(syncedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })}` : ''}.` : foundry ? `${foundry.ontologyObjectCount} objects and ${foundry.actionCount} governed actions are mapped; local fallback remains safe.` : 'Checking the server-side ontology connector.'}</p>
+              </div>
+              <div className="rounded-md border border-amber-500/15 bg-amber-500/[0.035] p-2.5">
+                <div className="flex items-center justify-between gap-2"><p className="text-[11px] font-semibold text-slate-200">Data boundary</p><Badge className="bg-amber-500/15 text-[9px] text-amber-300">Synthetic only</Badge></div>
+                <p className="mt-1 text-[10px] leading-relaxed text-slate-500">Reproducible demo data only — not live operational police data or an automated enforcement system.</p>
+              </div>
+            </div>
           </section>
           <section className="rounded-xl border border-white/[0.07] bg-[#0d141f]/85 p-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">Decision safeguards</h3>
