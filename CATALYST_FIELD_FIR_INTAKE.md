@@ -14,7 +14,7 @@ This is the second live Catalyst integration in CrimeSight. It turns the **Field
 
 ## Data Store columns
 
-Create the following columns as **Text**: `FirNumber`, `OfficerName`, `BadgeNumber`, `District`, `PoliceStation`, `CrimeType`, `Place`, `Description`, `Priority`, `Status`, `PhotoCount`, `EvidenceKeys`, `SubmittedAt`, `LastStatusUpdate`, `Source`, and `CorrelationId`.
+Create the following columns as **Text**: `FirNumber`, `OfficerName`, `BadgeNumber`, `District`, `PoliceStation`, `CrimeType`, `Place`, `Description`, `CasePriority`, `CaseStatus`, `PhotoCount`, `EvidenceKeys`, `SubmittedAt`, `LastStatusUpdate`, `IntakeSource`, and `CorrelationId`. The prefixed names avoid Catalyst reserved-column keywords.
 
 ## Safety controls
 

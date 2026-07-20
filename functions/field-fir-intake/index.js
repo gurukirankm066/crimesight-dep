@@ -78,8 +78,8 @@ function toReport(row) {
     crimeType: row.CrimeType,
     place: row.Place,
     description: row.Description,
-    priority: row.Priority,
-    status: row.Status,
+    priority: row.CasePriority,
+    status: row.CaseStatus,
     photos: row.EvidenceKeys ? String(row.EvidenceKeys).split(',').filter(Boolean).map((key, index) => ({
       id: `${row.ROWID}-${index}`,
       name: key.split('/').pop(),
@@ -161,13 +161,13 @@ module.exports = async (req, res) => {
       CrimeType: crimeType,
       Place: place,
       Description: description,
-      Priority: priority,
-      Status: 'Submitted',
+      CasePriority: priority,
+      CaseStatus: 'Submitted',
       PhotoCount: String(evidenceKeys.length),
       EvidenceKeys: evidenceKeys.join(','),
       SubmittedAt: submittedAt,
       LastStatusUpdate: submittedAt,
-      Source: 'CrimeSight synthetic prototype',
+      IntakeSource: 'CrimeSight synthetic prototype',
       CorrelationId: correlationId,
     });
 
