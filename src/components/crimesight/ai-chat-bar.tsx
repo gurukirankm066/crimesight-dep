@@ -73,6 +73,9 @@ const SUGGESTED_QUERIES = [
   'Show high-risk cybercrime FIRs in Mysuru',
   'How many repeat-pattern FIRs are open?',
   'What is the most common crime in Bengaluru Urban?',
+  'Show theft FIRs in Ballari from the last 30 days',
+  'Show under-investigation assault FIRs',
+  'How many charge-sheeted cases are in Kalaburagi?',
 ]
 
 interface QueryEvidence {
@@ -384,16 +387,19 @@ export default function AIChatBar() {
 
       {/* ── Suggested Queries (only when expanded) ── */}
       {chatHistory.length === 0 && isExpanded && (
-        <div className="flex items-center gap-2 pb-1.5">
-          {SUGGESTED_QUERIES.map(q => (
-            <button
-              key={q}
-              onClick={() => sendMessage(q)}
-              className="text-[10px] text-slate-500 hover:text-emerald-400 bg-white/[0.03] border border-white/[0.06] rounded-full px-2.5 py-1 transition-colors whitespace-nowrap"
-            >
-              {q}
-            </button>
-          ))}
+        <div className="pb-1.5">
+          <p className="mb-1.5 text-[9px] font-mono uppercase tracking-wider text-slate-600">Try a verified FIR query</p>
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+            {SUGGESTED_QUERIES.map(q => (
+              <button
+                key={q}
+                onClick={() => sendMessage(q)}
+                className="shrink-0 text-[10px] text-slate-500 hover:text-emerald-400 bg-white/[0.03] border border-white/[0.06] rounded-full px-2.5 py-1 transition-colors whitespace-nowrap"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
