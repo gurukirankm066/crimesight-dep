@@ -19,7 +19,6 @@ import MorningBriefTab from '@/components/crimesight/morning-brief-tab'
 import OperationsTab from '@/components/crimesight/operations-tab'
 import AIChatBar from '@/components/crimesight/ai-chat-bar'
 import LoginScreen from '@/components/crimesight/login-screen'
-import IntelActivation from '@/components/crimesight/intel-activation'
 import AlertsPanel from '@/components/crimesight/alerts-panel'
 import CommandPalette from '@/components/crimesight/command-palette'
 import VoiceFirModal from '@/components/crimesight/voice-fir-modal'
@@ -89,7 +88,6 @@ export default function Home() {
   const { activeTab, setActiveTab: storeSetActiveTab, setTickerItems, tickerItems, selectedFirId, dossierOpen, dossierSuspectName, dossierSourceFir, closeDossier, incrementLivePulse } = useCrimeSightStore()
   const [authenticated, setAuthenticated] = useState(false)
   const [authUser, setAuthUser] = useState('')
-  const [showActivation, setShowActivation] = useState(false)
   const [newAlerts, setNewAlerts] = useState(0)
   const [showAlerts, setShowAlerts] = useState(false)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
@@ -178,17 +176,9 @@ export default function Home() {
 
   const Active = tabComponents[activeTab]
 
-  const handleActivationComplete = useCallback(() => {
-    setShowActivation(false)
-    setAuthenticated(true)
-  }, [])
-
   // Login gate
   if (!authenticated) {
-    if (showActivation) {
-      return <IntelActivation onComplete={handleActivationComplete} />
-    }
-    return <LoginScreen onAuthenticated={(user) => { setAuthUser(user); setShowActivation(true) }} />
+    return <LoginScreen onAuthenticated={(user) => { setAuthUser(user); setAuthenticated(true) }} />
   }
 
   return (
