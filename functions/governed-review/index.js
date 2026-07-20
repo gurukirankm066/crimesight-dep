@@ -4,7 +4,7 @@
  * CrimeSight governed-review API — Catalyst Advanced I/O Function.
  *
  * Data Store table required before deployment: GovernedReviewActions
- * Required columns (all VARCHAR except RecordedAt DATETIME):
+ * Required columns are Catalyst Text fields; RecordedAt stores an ISO timestamp.
  * FirId, FirNumber, Decision, Actor, Rationale, EvidenceRequirement,
  * Source, CorrelationId, RecordedAt
  *

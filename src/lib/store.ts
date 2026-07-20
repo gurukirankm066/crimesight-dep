@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { fetchGovernedReviewActions, isGovernedReviewApiConfigured, saveGovernedReviewAction } from '@/lib/governed-review-client'
 
 export type TabValue = 'map' | 'dashboard' | 'trends' | 'network' | 'most-wanted' | 'cases' | 'ai' | 'brief' | 'operations'
 
@@ -43,6 +44,9 @@ export interface ReviewAction {
   actor: string
   reason: string
   recordedAt: string
+  evidenceRequirement?: string
+  source?: 'local' | 'catalyst'
+  correlationId?: string
 }
 
 interface CrimeSightState {
@@ -115,7 +119,9 @@ interface CrimeSightState {
 
   // ── Governed Review Workflow ──
   reviewActions: ReviewAction[]
-  recordReviewAction: (action: Omit<ReviewAction, 'recordedAt'>) => void
+  reviewStorage: 'local' | 'syncing' | 'catalyst' | 'unavailable'
+  hydrateReviewActions: () => Promise<void>
+  recordReviewAction: (action: Omit<ReviewAction, 'recordedAt' | 'source' | 'correlationId'>) => Promise<void>
 }
 
 export interface TickerItem {
@@ -328,12 +334,44 @@ export const useCrimeSightStore = create<CrimeSightState>()(persist((set) => ({
 
   // ── Governed Review Workflow ──
   reviewActions: [],
-  recordReviewAction: (action) => set((state) => ({
-    reviewActions: [
-      { ...action, recordedAt: new Date().toISOString() },
-      ...state.reviewActions.filter(existing => existing.firId !== action.firId),
-    ].slice(0, 25),
-  })),
+  reviewStorage: isGovernedReviewApiConfigured() ? 'syncing' : 'local',
+  hydrateReviewActions: async () => {
+    if (!isGovernedReviewApiConfigured()) return
+
+    try {
+      const actions = await fetchGovernedReviewActions()
+      set((state) => ({
+        reviewActions: [
+          ...actions.map(action => ({ ...action, source: 'catalyst' as const })),
+          ...state.reviewActions.filter(local => !actions.some(remote => remote.firId === local.firId)),
+        ].sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime()).slice(0, 25),
+        reviewStorage: 'catalyst',
+      }))
+    } catch {
+      set({ reviewStorage: 'unavailable' })
+    }
+  },
+  recordReviewAction: async (action) => {
+    const localAction: ReviewAction = { ...action, recordedAt: new Date().toISOString(), source: 'local' }
+    set((state) => ({
+      reviewActions: [localAction, ...state.reviewActions.filter(existing => existing.firId !== action.firId)].slice(0, 25),
+    }))
+
+    if (!isGovernedReviewApiConfigured()) return
+
+    try {
+      const saved = await saveGovernedReviewAction(action)
+      set((state) => ({
+        reviewActions: [
+          { ...saved, source: 'catalyst' as const },
+          ...state.reviewActions.filter(existing => existing.firId !== action.firId),
+        ].slice(0, 25),
+        reviewStorage: 'catalyst',
+      }))
+    } catch {
+      set({ reviewStorage: 'unavailable' })
+    }
+  },
 }), {
   name: 'crimesight-prototype-review-v1',
   partialize: (state) => ({ reviewActions: state.reviewActions }),

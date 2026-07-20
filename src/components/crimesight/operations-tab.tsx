@@ -92,6 +92,8 @@ export default function OperationsTab() {
   const [syncedAt, setSyncedAt] = useState<string | null>(null)
   const navigateToFir = useCrimeSightStore(s => s.navigateToFir)
   const reviewActions = useCrimeSightStore(s => s.reviewActions)
+  const reviewStorage = useCrimeSightStore(s => s.reviewStorage)
+  const hydrateReviewActions = useCrimeSightStore(s => s.hydrateReviewActions)
   const recordReviewAction = useCrimeSightStore(s => s.recordReviewAction)
   const [foundry, setFoundry] = useState<FoundryStatus | null>(null)
 
@@ -103,6 +105,10 @@ export default function OperationsTab() {
       .then((status: FoundryStatus | null) => setFoundry(status))
       .catch(() => setFoundry(null))
   }, [])
+
+  useEffect(() => {
+    void hydrateReviewActions()
+  }, [hydrateReviewActions])
 
   useEffect(() => {
     fetch('/api/foundry/fir-cases', { cache: 'no-store' })
@@ -222,8 +228,8 @@ export default function OperationsTab() {
             </div>
           </section>
           <section className="rounded-xl border border-white/[0.07] bg-[#0d141f]/85 p-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">Audit trail</h3>
-            {reviewActions.length ? <div className="mt-3 space-y-2">{reviewActions.slice(0, 4).map(action => <p key={action.firId} className="rounded-md border border-white/[0.05] bg-black/15 p-2 text-[10px] leading-relaxed text-slate-400"><span className="font-mono text-emerald-300">{action.fir}</span>: {action.status.toLowerCase()} by {action.actor} at {new Date(action.recordedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })}.<br /><span className="text-slate-500">{action.reason}</span></p>)}</div> : <p className="mt-3 text-[11px] leading-relaxed text-slate-500">No actions recorded yet. Approve or request evidence to create a prototype audit entry.</p>}
+            <div className="flex items-center justify-between gap-2"><h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">Audit trail</h3><Badge variant="outline" className={`text-[9px] ${reviewStorage === 'catalyst' ? 'border-emerald-500/25 bg-emerald-500/[0.06] text-emerald-300' : reviewStorage === 'syncing' ? 'border-amber-500/25 bg-amber-500/[0.06] text-amber-300' : 'border-white/10 text-slate-400'}`}>{reviewStorage === 'catalyst' ? 'Catalyst stored' : reviewStorage === 'syncing' ? 'Syncing' : reviewStorage === 'unavailable' ? 'Local fallback' : 'Local demo'}</Badge></div>
+            {reviewActions.length ? <div className="mt-3 space-y-2">{reviewActions.slice(0, 4).map(action => <p key={`${action.firId}-${action.recordedAt}`} className="rounded-md border border-white/[0.05] bg-black/15 p-2 text-[10px] leading-relaxed text-slate-400"><span className="font-mono text-emerald-300">{action.fir}</span>: {action.status.toLowerCase()} by {action.actor} at {new Date(action.recordedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })}.<br /><span className="text-slate-500">{action.reason}</span></p>)}</div> : <p className="mt-3 text-[11px] leading-relaxed text-slate-500">No actions recorded yet. Approve or request evidence to create a governed review entry.</p>}
           </section>
         </aside>
       </div>

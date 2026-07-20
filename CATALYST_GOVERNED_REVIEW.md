@@ -7,7 +7,20 @@ CrimeSight uses this Catalyst **Advanced I/O Function** to persist human review 
 - `functions/governed-review/` — Node.js Advanced I/O function using `zcatalyst-sdk-node`
 - `catalyst.json` and `.catalystrc` — link this workspace to the existing Catalyst project
 
-## One-time Data Store configuration
+## Provisioned Catalyst resources
+
+The Development environment now contains:
+
+- Data Store table: `GovernedReviewActions`
+- Advanced I/O Function: `governed-review`
+- API Gateway route: `ANY /governed-review` → `governed-review`
+- Gateway throttling: 120 requests/minute overall and 30 requests/minute per IP
+
+The gateway URL is:
+
+`https://crimesightai-ksp-60075226836.development.catalystserverless.in/governed-review`
+
+## Data Store schema
 
 Create a Data Store table called `GovernedReviewActions` with these columns:
 
@@ -17,13 +30,13 @@ Create a Data Store table called `GovernedReviewActions` with these columns:
 | `FirNumber` | Single line | Yes |
 | `Decision` | Single line | Yes |
 | `Actor` | Single line | Yes |
-| `Rationale` | Multi-line | Yes |
-| `EvidenceRequirement` | Multi-line | No |
+| `Rationale` | Text | Yes |
+| `EvidenceRequirement` | Text | No |
 | `Source` | Single line | Yes |
 | `CorrelationId` | Single line | Yes |
-| `RecordedAt` | Date-time | Yes |
+| `RecordedAt` | Text (ISO timestamp) | Yes |
 
-Enable a search index for `FirNumber`, `Decision`, and `RecordedAt`. Give the Function service identity write access; do not grant direct browser write access to this table.
+The function service identity writes to this table. The browser never receives Data Store credentials.
 
 ## Function contract
 
@@ -31,9 +44,12 @@ Enable a search index for `FirNumber`, `Decision`, and `RecordedAt`. Give the Fu
 
 `POST /actions` accepts a decision with `firId`, `fir`, `status` (`Approved` or `Needs evidence`), `actor`, `reason`, and optional `evidenceRequirement`.
 
-Set these Function environment variables before deployment:
+Set this Function environment variable in Catalyst to restrict browser origins:
 
-- `GOVERNED_REVIEW_TABLE=GovernedReviewActions`
 - `ALLOWED_ORIGINS=https://crimesight-dep-onmoxbpk.onslate.in`
 
-The client should call this function through Catalyst API Gateway after an authenticated route is configured. The browser must never receive Data Store credentials.
+Set this Slate environment variable before deploying the web app:
+
+- `NEXT_PUBLIC_GOVERNED_REVIEW_API_URL=https://crimesightai-ksp-60075226836.development.catalystserverless.in/governed-review`
+
+The client calls only API Gateway. The browser must never receive Data Store credentials.
