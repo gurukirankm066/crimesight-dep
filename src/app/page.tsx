@@ -41,7 +41,6 @@ const tabs = [
   { value: 'operations', label: 'Actions', icon: ClipboardCheck, shortLabel: 'ACT' },
   { value: 'network', label: 'Network', icon: GitBranch, shortLabel: 'LNK' },
   { value: 'cases', label: 'FIRs', icon: FileText, shortLabel: 'FIR' },
-  { value: 'brief', label: 'Morning Brief', icon: Sun, shortLabel: 'BRIEF' },
 ] as const
 
 const tabComponents: Record<string, React.FC> = {
@@ -90,6 +89,7 @@ export default function Home() {
   const [showVoiceFir, setShowVoiceFir] = useState(false)
   const [showFieldFir, setShowFieldFir] = useState(false)
   const [showBriefing, setShowBriefing] = useState(false)
+  const [commandView, setCommandView] = useState<'overview' | 'brief'>('overview')
   const [showAiReport, setShowAiReport] = useState(false)
   const [showTimeline, setShowTimeline] = useState(false)
   const [showJudgeDemo, setShowJudgeDemo] = useState(false)
@@ -167,10 +167,27 @@ export default function Home() {
   }, [activeTab])
 
   const handleTabChange = useCallback((tab: string) => {
+    if (tab === 'brief') {
+      setCommandView('brief')
+      storeSetActiveTab('dashboard')
+      return
+    }
+    if (tab === 'dashboard') setCommandView('overview')
     storeSetActiveTab(tab as typeof activeTab)
   }, [storeSetActiveTab])
 
-  const Active = tabComponents[activeTab]
+  useEffect(() => {
+    // Older sessions may have Morning Brief persisted as a top-level tab.
+    // Migrate them into its new Command workspace home without losing access.
+    if (activeTab === 'brief') {
+      setCommandView('brief')
+      storeSetActiveTab('dashboard')
+    }
+  }, [activeTab, storeSetActiveTab])
+
+  const Active = activeTab === 'dashboard' && commandView === 'brief'
+    ? MorningBriefTab
+    : tabComponents[activeTab]
 
   // Login gate
   if (!authenticated) {
@@ -263,7 +280,7 @@ export default function Home() {
 
               {/* Intelligence Briefing */}
               <button
-                onClick={() => setShowBriefing(true)}
+                onClick={() => handleTabChange('brief')}
                 className="hidden md:flex items-center gap-1.5 h-7 px-2 rounded-md text-[10px] text-amber-400/80 hover:text-amber-300 hover:bg-amber-500/5 transition-colors font-medium"
                 aria-label="Intelligence Briefing"
               >
@@ -366,14 +383,23 @@ export default function Home() {
         <main id="main-content" className="flex-1 min-h-0 overflow-y-auto custom-scrollbar relative z-[2]">
           <AnimatePresence mode="wait">
             <motion.div
-              key={activeTab}
+              key={`${activeTab}-${commandView}`}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.2 }}
               className="p-3 sm:p-5 lg:p-7 max-w-[1600px] mx-auto w-full"
             >
-              <TabErrorBoundary tabName={tabNames[activeTab] || activeTab} key={activeTab}>
+              {activeTab === 'dashboard' && (
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-[#0b121d] p-2">
+                  <div className="flex items-center gap-1 rounded-lg bg-black/15 p-1" role="tablist" aria-label="Command workspace views">
+                    <button role="tab" aria-selected={commandView === 'overview'} onClick={() => setCommandView('overview')} className={`rounded-md px-3 py-1.5 text-[11px] font-semibold transition-colors ${commandView === 'overview' ? 'bg-emerald-500/15 text-emerald-300' : 'text-slate-500 hover:text-slate-300'}`}>Command overview</button>
+                    <button role="tab" aria-selected={commandView === 'brief'} onClick={() => setCommandView('brief')} className={`rounded-md px-3 py-1.5 text-[11px] font-semibold transition-colors ${commandView === 'brief' ? 'bg-amber-500/15 text-amber-200' : 'text-slate-500 hover:text-slate-300'}`}>Morning brief</button>
+                  </div>
+                  {commandView === 'brief' && <button onClick={() => setShowBriefing(true)} className="rounded-md border border-amber-500/20 bg-amber-500/[0.06] px-3 py-1.5 text-[10px] font-semibold text-amber-200 transition-colors hover:bg-amber-500/[0.13]">Open briefing presentation</button>}
+                </div>
+              )}
+              <TabErrorBoundary tabName={activeTab === 'dashboard' && commandView === 'brief' ? 'Morning Brief' : tabNames[activeTab] || activeTab} key={`${activeTab}-${commandView}`}>
                 <Active />
               </TabErrorBoundary>
             </motion.div>

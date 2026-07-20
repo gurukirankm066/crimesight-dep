@@ -11,7 +11,7 @@ import {
   CommandSeparator,
 } from '@/components/ui/command'
 import {
-  FileWarning, Map, BarChart3, TrendingUp, GitBranch,
+  Map, BarChart3, TrendingUp, GitBranch,
   Target, FileText, Brain, MessageSquare, X, Sun
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -27,14 +27,14 @@ interface CommandPaletteProps {
 }
 
 const navItems = [
-  { value: 'brief', label: 'Morning Brief', icon: Sun, shortcut: '1', desc: 'Daily executive intelligence summary' },
-  { value: 'map', label: 'Geo Intelligence', icon: Map, shortcut: '2', desc: 'District-wise crime mapping' },
-  { value: 'dashboard', label: 'Command Center', icon: BarChart3, shortcut: '3', desc: 'KPI dashboard and priority alerts' },
-  { value: 'trends', label: 'Crime Analytics', icon: TrendingUp, shortcut: '4', desc: 'Time-based pattern analysis' },
-  { value: 'network', label: 'Link Analysis', icon: GitBranch, shortcut: '5', desc: 'Suspect association mapping' },
-  { value: 'most-wanted', label: 'Priority Targets', icon: Target, shortcut: '6', desc: 'Repeat offender threat ranking' },
-  { value: 'cases', label: 'FIR Registry', icon: FileText, shortcut: '7', desc: 'Search and manage FIR records' },
-  { value: 'ai', label: 'Review Signals', icon: Brain, shortcut: '8', desc: 'Transparent rule-based review signals and anomaly context' },
+  { value: 'dashboard', label: 'Command', icon: BarChart3, shortcut: '1', desc: 'Dashboard, alerts, trends, and Morning Brief' },
+  { value: 'map', label: 'Geo Intelligence', icon: Map, shortcut: '2', desc: 'District mapping, hotspots, and patrol context' },
+  { value: 'cases', label: 'FIR Workspace', icon: FileText, shortcut: '3', desc: 'Registry, FIR detail, and Field FIR intake' },
+  { value: 'network', label: 'Link Intelligence', icon: GitBranch, shortcut: '4', desc: 'Entity network, targets, and dossiers' },
+  { value: 'operations', label: 'Governed Actions', icon: Brain, shortcut: '5', desc: 'Review queue, evidence requests, and audit trail' },
+  { value: 'trends', label: 'Crime Analytics', icon: TrendingUp, shortcut: '6', desc: 'Detailed time-based pattern analysis' },
+  { value: 'most-wanted', label: 'Priority Targets', icon: Target, shortcut: '7', desc: 'Repeat-offender threat ranking' },
+  { value: 'ai', label: 'Review Signals', icon: Brain, shortcut: '8', desc: 'Transparent rule-based review signals' },
 ]
 
 const quickActions = [
