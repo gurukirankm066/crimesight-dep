@@ -2,7 +2,8 @@
   "functions": {
     "targets": [
       "governed-review",
-      "field-fir-intake"
+      "field-fir-intake",
+      "quickml-conversation"
     ],
     "ignore": [],
     "source": "functions"

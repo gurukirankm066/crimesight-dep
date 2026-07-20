@@ -3,8 +3,10 @@
 import React from 'react'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
-import { Send, ChevronUp, ChevronDown, Sparkles, X, RotateCcw, Database, ShieldCheck } from 'lucide-react'
-import { runGovernedFirQuery } from '@/lib/query-copilot'
+import { Send, ChevronUp, ChevronDown, Sparkles, X, Database, ShieldCheck } from 'lucide-react'
+import { isGovernedFirQuestion, runGovernedFirQuery } from '@/lib/query-copilot'
+import { getConversationFallback } from '@/lib/conversation-fallback'
+import { askQuickMlConversation, isQuickMlConversationConfigured } from '@/lib/quickml-conversation-client'
 
 /* ═══════════════════════════════════════════════════════════════
    MARKDOWN RENDERING
@@ -71,6 +73,7 @@ function renderMarkdown(text: string): React.ReactNode[] {
    ═══════════════════════════════════════════════════════════════ */
 
 const SUGGESTED_QUERIES = [
+  'Hi, what can you help me with?',
   'Show high-risk cybercrime FIRs in Mysuru',
   'How many repeat-pattern FIRs are open?',
   'What is the most common crime in Bengaluru Urban?',
@@ -106,9 +109,8 @@ interface ChatMessage {
   content: string
   timestamp: Date
   evidence?: QueryEvidence
+  provider?: 'verified-query' | 'zoho-quickml' | 'guided-fallback'
 }
-
-const FALLBACK_MESSAGE = 'Unable to connect to CrimeSight AI. Retrying...'
 
 function formatTime(date: Date): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -159,16 +161,30 @@ export default function AIChatBar() {
 
       let answer: string
       let evidence: QueryEvidence | undefined
+      let provider: ChatMessage['provider']
 
       try {
-        // The synthetic demo query engine executes deterministically in the
-        // browser. This keeps the judge flow available even if a managed
-        // runtime transiently drops a Next.js route response body.
-        const data = runGovernedFirQuery(trimmed)
-        answer = data.reply || FALLBACK_MESSAGE
-        evidence = data
+        if (isGovernedFirQuestion(trimmed)) {
+          // The synthetic demo query engine executes deterministically in the
+          // browser. This keeps the judge flow available even if a managed
+          // runtime transiently drops a Next.js route response body.
+          const data = runGovernedFirQuery(trimmed)
+          answer = data.reply
+          evidence = data
+          provider = 'verified-query'
+        } else if (isQuickMlConversationConfigured()) {
+          const quickMl = await askQuickMlConversation(trimmed, chatHistory)
+          answer = quickMl.reply
+          provider = quickMl.provider
+        } else {
+          answer = getConversationFallback(trimmed).reply
+          provider = 'guided-fallback'
+        }
       } catch {
-        answer = FALLBACK_MESSAGE
+        // A failed optional model call never breaks the judge flow. The local
+        // guide remains useful and does not pretend to be a data result.
+        answer = getConversationFallback(trimmed).reply
+        provider = 'guided-fallback'
       }
 
       const aiMsg: ChatMessage = {
@@ -177,6 +193,7 @@ export default function AIChatBar() {
         content: answer,
         timestamp: new Date(),
         evidence,
+        provider,
       }
 
       setChatHistory((prev) => [...prev, aiMsg])
@@ -239,7 +256,7 @@ export default function AIChatBar() {
                   </span>
                 </div>
                 <span className="text-[9px] font-mono text-slate-700">
-                  SCRB Query Interface
+                  {isQuickMlConversationConfigured() ? 'QuickML conversation + verified FIR queries' : 'Guided conversation + verified FIR queries'}
                 </span>
               </div>
               <button
@@ -289,6 +306,11 @@ export default function AIChatBar() {
                           <div className="text-[13px] leading-relaxed space-y-0.5">
                             {msg.role === 'ai' ? renderMarkdown(msg.content) : msg.content}
                           </div>
+                          {msg.role === 'ai' && msg.provider && !msg.evidence && (
+                            <p className="mt-2 text-[9px] font-mono uppercase tracking-wider text-slate-500">
+                              {msg.provider === 'zoho-quickml' ? 'Zoho QuickML · conversational response' : 'CrimeSight guide · no FIR records queried'}
+                            </p>
+                          )}
                           {msg.role === 'ai' && msg.evidence && (
                             <div className="mt-2.5 rounded-md border border-emerald-500/15 bg-emerald-500/[0.035] p-2.5">
                               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -311,26 +333,6 @@ export default function AIChatBar() {
                             </div>
                           )}
                         </div>
-                        {msg.role === 'ai' && msg.content === FALLBACK_MESSAGE && (
-                          <button
-                            onClick={() => {
-                              // Find the last user message and resend it
-                              const lastUserIdx = [...chatHistory].reverse().findIndex(m => m.role === 'user')
-                              if (lastUserIdx !== -1) {
-                                const lastUserMsg = chatHistory[chatHistory.length - 1 - lastUserIdx]
-                                // Remove the failed AI message
-                                setChatHistory(prev => prev.filter(m => m.id !== msg.id))
-                                // Resend
-                                setTimeout(() => sendMessage(lastUserMsg.content), 50)
-                              }
-                            }}
-                            disabled={sending}
-                            className="flex items-center gap-1 mt-1.5 ml-1 text-[10px] text-emerald-400/70 hover:text-emerald-400 transition-colors disabled:opacity-40"
-                          >
-                            <RotateCcw className="size-3" />
-                            Retry
-                          </button>
-                        )}
                       </div>
                     </div>
                   ))}
@@ -374,7 +376,7 @@ export default function AIChatBar() {
       {/* ── Suggested Queries (only when expanded) ── */}
       {chatHistory.length === 0 && isExpanded && (
         <div className="pb-1.5">
-          <p className="mb-1.5 text-[9px] font-mono uppercase tracking-wider text-slate-600">Try a verified FIR query</p>
+          <p className="mb-1.5 text-[9px] font-mono uppercase tracking-wider text-slate-600">Ask a question or try a verified FIR query</p>
           <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
             {SUGGESTED_QUERIES.map(q => (
               <button

@@ -76,6 +76,15 @@ function unsupported(reply: string): QueryCopilotResponse {
 }
 
 /**
+ * Keeps the governed data boundary explicit. Conversation is handled by the
+ * assistant layer, while only FIR-intelligence questions reach this
+ * deterministic query compiler.
+ */
+export function isGovernedFirQuestion(input: string) {
+  return /(fir|case|crime|district|theft|cyber|assault|fraud|burglary|robbery|repeat|open|closed|investigation|risk|count|show|how many|most common|highest)/.test(input.trim().toLowerCase())
+}
+
+/**
  * Controlled natural-language query layer for the synthetic FIR prototype.
  * It never executes user-provided SQL; every question is compiled to an
  * allow-listed set of filters over the reproducible demo dataset.
@@ -84,8 +93,7 @@ export function runGovernedFirQuery(input: string): QueryCopilotResponse {
   const question = input.trim().toLowerCase()
   if (!question) return unsupported('Ask about FIRs, districts, crime types, case status, priority, or repeat-pattern signals.')
 
-  const isDataQuestion = /(fir|case|crime|district|theft|cyber|assault|fraud|burglary|robbery|repeat|open|closed|investigation|risk|count|show|how many|most common|highest)/.test(question)
-  if (!isDataQuestion) {
+  if (!isGovernedFirQuestion(question)) {
     return unsupported('I can safely answer FIR and crime-pattern questions from this synthetic dataset. Try: “Show high-risk cybercrime FIRs in Mysuru.”')
   }
 
