@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Shield, Lock, Fingerprint } from 'lucide-react'
+import { Shield, Lock, Eye, EyeOff, Fingerprint, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 // Typing animation for the login title
@@ -37,23 +37,51 @@ interface LoginScreenProps {
   onAuthenticated: (user: string) => void
 }
 
+// Visual demo gate only — this is deliberately not real authentication.
+const DEMO_CREDENTIALS = [
+  { username: 'admin', password: 'admin' },
+  { username: 'scrb', password: 'scrb' },
+  { username: 'dgp', password: 'karnataka' },
+]
+
 export default function LoginScreen({ onAuthenticated }: LoginScreenProps) {
   const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [shake, setShake] = useState(false)
   const [mounted, setMounted] = useState(false)
   const { displayed: typedDisplay, done: typingDone } = useTypingText('CRIMESIGHT', 100, 800)
 
   useEffect(() => { setMounted(true) }, [])
 
-  const handleContinue = async () => {
+  const handleLogin = async () => {
+    if (!username.trim() || !password.trim()) {
+      setError('Enter both demo credentials')
+      setShake(true)
+      setTimeout(() => setShake(false), 500)
+      return
+    }
     setLoading(true)
-    await new Promise(r => setTimeout(r, 350))
+    setError('')
+    await new Promise(r => setTimeout(r, 500))
     setLoading(false)
-    onAuthenticated(username.trim() || 'demo reviewer')
+
+    const match = DEMO_CREDENTIALS.find(
+      credential => credential.username === username.trim().toLowerCase() && credential.password === password.trim().toLowerCase()
+    )
+    if (match) {
+      onAuthenticated(username.trim())
+      return
+    }
+    setError('Demo credentials not recognised')
+    setShake(true)
+    setTimeout(() => setShake(false), 500)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleContinue()
+    if (e.key === 'Enter') handleLogin()
   }
 
   return (
@@ -78,7 +106,7 @@ export default function LoginScreen({ onAuthenticated }: LoginScreenProps) {
 
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1, x: 0 }}
+            animate={shake ? { opacity: 1, y: 0, scale: 1, x: [0, -10, 10, -6, 6, -2, 2, 0] } : { opacity: 1, y: 0, scale: 1, x: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
             className="relative w-full max-w-sm mx-4"
           >
@@ -111,46 +139,75 @@ export default function LoginScreen({ onAuthenticated }: LoginScreenProps) {
                     transition={{ duration: 0.4 }}
                     className="text-[10px] text-slate-500 mt-1 tracking-wide"
                   >
-                    Prototype Intelligence Platform · Synthetic demonstration environment
+                    Prototype Intelligence Platform · Karnataka State Police — SCRB
                   </motion.p>
                   <div className="flex items-center justify-center gap-2 mt-2">
-                    <span className="text-[8px] font-mono text-amber-300/70 uppercase tracking-widest">Prototype Access</span>
+                    <span className="text-[8px] font-mono text-red-400/70 uppercase tracking-widest">Restricted Demo Access</span>
                     <Lock className="size-2.5 text-red-400/50" />
                   </div>
                 </div>
+
+                <AnimatePresence>
+                  {error && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-4">
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                        <AlertTriangle className="size-3 text-red-400 shrink-0" />
+                        <span className="text-[10px] text-red-400">{error}</span>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Form */}
                 <div className="space-y-3">
                   <div>
                     <label className="block text-[10px] text-slate-500 uppercase tracking-wider mb-1.5 font-medium">
-                      Demo reviewer name <span className="normal-case text-slate-600">(optional)</span>
+                      Officer ID / Username
                     </label>
                     <input
                       type="text"
                       value={username}
-                      onChange={e => setUsername(e.target.value)}
+                      onChange={e => { setUsername(e.target.value); setError('') }}
                       onKeyDown={handleKeyDown}
-                      placeholder="e.g. Judge / Reviewer"
+                      placeholder="e.g. admin"
                       autoFocus
                       disabled={loading}
                       className="w-full h-10 bg-[#111827] border border-white/[0.08] rounded-lg px-3 text-[13px] text-slate-200 placeholder:text-slate-600 outline-none focus:border-emerald-500/30 transition-all disabled:opacity-40"
                     />
                   </div>
 
+                  <div>
+                    <label className="block text-[10px] text-slate-500 uppercase tracking-wider mb-1.5 font-medium">Access Code</label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={e => { setPassword(e.target.value); setError('') }}
+                        onKeyDown={handleKeyDown}
+                        placeholder="••••••••"
+                        disabled={loading}
+                        className="w-full h-10 bg-[#111827] border border-white/[0.08] rounded-lg px-3 pr-10 text-[13px] text-slate-200 placeholder:text-slate-600 outline-none focus:border-emerald-500/30 transition-all disabled:opacity-40"
+                      />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400 transition-colors" tabIndex={-1} aria-label={showPassword ? 'Hide access code' : 'Show access code'}>
+                        {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
                   <Button
-                    onClick={handleContinue}
-                    disabled={loading}
+                    onClick={handleLogin}
+                    disabled={loading || !username.trim() || !password.trim()}
                     className="w-full h-10 mt-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[12px] font-semibold tracking-wider uppercase rounded-lg transition-all disabled:opacity-30"
                   >
                     {loading ? (
                       <span className="flex items-center gap-2">
                         <span className="size-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Opening demo...
+                        Authenticating demo...
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
                         <Lock className="size-3.5" />
-                        Continue to synthetic demo
+                        Authenticate
                       </span>
                     )}
                   </Button>
@@ -159,7 +216,7 @@ export default function LoginScreen({ onAuthenticated }: LoginScreenProps) {
                 {/* Classification footer */}
                 <div className="mt-5 pt-4 border-t border-white/[0.04] text-center">
                   <p className="text-[9px] text-slate-600">
-                    Demonstration environment — this is not an authentication system and contains no operational police data
+                    Demo access simulator only — not real authentication and contains no operational police data
                   </p>
                 </div>
               </div>
@@ -178,7 +235,7 @@ export default function LoginScreen({ onAuthenticated }: LoginScreenProps) {
             {/* Classification footer */}
             <div className="text-center mt-4 space-y-1">
               <p className="text-[8px] text-slate-700 uppercase tracking-widest">
-                Synthetic demonstration — not for operational use
+                Synthetic demonstration — restricted demo access only
               </p>
               <p className="text-[8px] text-emerald-500/30 uppercase tracking-wider">
                 Datathon 2026 · Team Quantara · Hack2skill
