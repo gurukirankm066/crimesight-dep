@@ -24,7 +24,7 @@ Deploy the `quickml-conversation` Advanced I/O function. In the function's envir
 | `QUICKML_ORG_HEADER_VALUE` | The organisation header value, if required |
 | `ALLOWED_ORIGINS` | `https://crimesight-dep-onmoxbpk.onslate.in` |
 
-Then add an API Gateway route for the newly deployed function, for example `/quickml-conversation`. The route must allow `POST` and `OPTIONS`.
+The repository includes the API Gateway route `/quickml-conversation`; deploy the API Gateway after the function so that route becomes public. It allows `POST` and `OPTIONS`.
 
 The function sends an OpenAI-style `messages` payload. If your QuickML API Details page specifies a different request body or response envelope, update `functions/quickml-conversation/index.js` to match that published contract before deploying.
 
@@ -33,7 +33,7 @@ The function sends an OpenAI-style `messages` payload. If your QuickML API Detai
 In Slate app settings, create exactly one public environment variable:
 
 ```text
-NEXT_PUBLIC_QUICKML_CHAT_URL=https://<your-catalyst-function-domain>/quickml-conversation
+NEXT_PUBLIC_QUICKML_CHAT_URL=https://crimesightai-ksp-60075226836.development.catalystserverless.in/quickml-conversation
 ```
 
 Redeploy or sync Slate. The interface will show **“QuickML conversation + verified FIR queries”** when this URL is present. If QuickML is unavailable, it still gives a polished guided response and all FIR queries remain available with their proof cards.

@@ -54,5 +54,33 @@
       }
     },
     "target_id": "49093000000215002"
+  },
+  {
+    "name": "QuickML Conversation",
+    "source_endpoint": "/quickml-conversation",
+    "target_endpoint": "/server/quickml-conversation/",
+    "target": "advancedio",
+    "method": "ANY",
+    "throttling": {
+      "overall": {
+        "duration": {
+          "days": 0,
+          "hours": 0,
+          "minutes": 1,
+          "seconds": 0
+        },
+        "limit": "60"
+      },
+      "ip": {
+        "duration": {
+          "days": 0,
+          "hours": 0,
+          "minutes": 1,
+          "seconds": 0
+        },
+        "limit": "20"
+      }
+    },
+    "target_id": "49093000000226006"
   }
 ]
