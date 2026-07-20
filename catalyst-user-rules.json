@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Field FIR Intake",
+    "source_endpoint": "/field-fir-intake",
+    "target_endpoint": "/server/field-fir-intake/",
+    "target": "advancedio",
+    "method": "ANY",
+    "throttling": {
+      "overall": {
+        "duration": {
+          "days": 0,
+          "hours": 0,
+          "minutes": 1,
+          "seconds": 0
+        },
+        "limit": "120"
+      },
+      "ip": {
+        "duration": {
+          "days": 0,
+          "hours": 0,
+          "minutes": 1,
+          "seconds": 0
+        },
+        "limit": "30"
+      }
+    },
+    "target_id": "49093000000220001"
+  },
+  {
+    "name": "Governed Review",
+    "source_endpoint": "/governed-review",
+    "target_endpoint": "/server/governed-review/",
+    "target": "advancedio",
+    "method": "ANY",
+    "throttling": {
+      "overall": {
+        "duration": {
+          "days": 0,
+          "hours": 0,
+          "minutes": 1,
+          "seconds": 0
+        },
+        "limit": "120"
+      },
+      "ip": {
+        "duration": {
+          "days": 0,
+          "hours": 0,
+          "minutes": 1,
+          "seconds": 0
+        },
+        "limit": "30"
+      }
+    },
+    "target_id": "49093000000215002"
+  }
+]

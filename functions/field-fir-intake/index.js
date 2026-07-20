@@ -16,7 +16,10 @@ const { Readable } = require('stream');
 
 const TABLE_NAME = process.env.FIELD_FIR_TABLE || 'FieldFirReports';
 const EVIDENCE_BUCKET = process.env.FIELD_FIR_EVIDENCE_BUCKET || 'crimesight-field-evidence';
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(value => value.trim()).filter(Boolean);
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://crimesight-dep-onmoxbpk.onslate.in')
+  .split(',')
+  .map(value => value.trim())
+  .filter(Boolean);
 const PRIORITIES = new Set(['Low', 'Medium', 'High', 'Critical']);
 const MAX_PHOTOS = 5;
 const MAX_BODY_BYTES = 8 * 1024 * 1024;
