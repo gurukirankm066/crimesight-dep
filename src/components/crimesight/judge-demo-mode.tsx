@@ -5,23 +5,27 @@ import { CheckCircle2, ChevronLeft, ChevronRight, ClipboardCheck, Database, Eye,
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { GENERATED_CASES } from '@/lib/case-generator'
+import { runGovernedFirQuery } from '@/lib/query-copilot'
 import { useCrimeSightStore } from '@/lib/store'
 
 interface Props {
   open: boolean
   onClose: () => void
   onOpenCaseCommand: () => void
+  onOpenFieldFir: () => void
 }
 
 const steps = [
-  { label: 'Signal', icon: MapPin },
-  { label: 'Why surfaced', icon: Eye },
+  { label: 'Query proof', icon: Database },
+  { label: 'Challenge', icon: Eye },
   { label: 'Connected case', icon: Network },
   { label: 'Human decision', icon: ClipboardCheck },
+  { label: 'Field to action', icon: FileText },
 ] as const
 
-export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand }: Props) {
+export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand, onOpenFieldFir }: Props) {
   const [step, setStep] = useState(0)
+  const [challengeVisible, setChallengeVisible] = useState(false)
   const setActiveTab = useCrimeSightStore(s => s.setActiveTab)
   const reviewActions = useCrimeSightStore(s => s.reviewActions)
   const recordReviewAction = useCrimeSightStore(s => s.recordReviewAction)
@@ -30,10 +34,12 @@ export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand }: Prop
     () => GENERATED_CASES.find(item => item.priority === 'Critical' && item.hasRepeatOffender) ?? GENERATED_CASES[0],
     [],
   )
+  const queryProof = useMemo(() => runGovernedFirQuery('Show high-risk cybercrime FIRs in Mysuru'), [])
 
   useEffect(() => {
     if (!open) return
     setStep(0)
+    setChallengeVisible(false)
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
     }
@@ -62,7 +68,7 @@ export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand }: Prop
           <button onClick={onClose} className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-white" aria-label="Close demo mode"><X className="size-4" /></button>
         </header>
 
-        <div className="grid shrink-0 grid-cols-4 border-b border-white/[0.07] bg-black/15 px-3 sm:px-6">
+        <div className="grid shrink-0 grid-cols-5 border-b border-white/[0.07] bg-black/15 px-3 sm:px-6">
           {steps.map((item, index) => {
             const Icon = item.icon
             const active = index === step
@@ -74,33 +80,24 @@ export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand }: Prop
         <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
           {step === 0 && (
             <div className="space-y-5">
-              <div className="rounded-xl border border-red-500/20 bg-gradient-to-br from-red-500/[0.12] to-transparent p-4 sm:p-5">
-                <div className="flex flex-wrap items-center gap-2"><Badge className="border-red-400/20 bg-red-500/15 text-[10px] text-red-200">CRITICAL SIGNAL</Badge><Badge variant="outline" className="border-white/10 text-[10px] text-slate-300">Repeat-pattern cue</Badge></div>
-                <h3 className="mt-3 text-xl font-bold text-white">{featuredCase.crimeType} <span className="text-slate-400">· {featuredCase.district}</span></h3>
-                <p className="mt-2 font-mono text-sm text-emerald-300">{featuredCase.fir}</p>
-                <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-300">A critical synthetic FIR was surfaced for supervisor review because it combines a high urgency score with a repeat-pattern identifier. This is a review signal, not a decision or accusation.</p>
+              <div className="rounded-xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.12] to-transparent p-4 sm:p-5">
+                <div className="flex flex-wrap items-center gap-2"><Badge className="border-emerald-400/20 bg-emerald-500/15 text-[10px] text-emerald-200">PROOF BEFORE ACTION</Badge><Badge variant="outline" className="border-white/10 text-[10px] text-slate-300">Verified dataset query</Badge></div>
+                <p className="mt-3 text-sm font-semibold text-white">“Show high-risk cybercrime FIRs in Mysuru.”</p>
+                <p className="mt-3 text-xl font-bold text-white">{queryProof.resultCount.toLocaleString()} matching FIRs <span className="text-slate-400">were found from the reproducible dataset.</span></p>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300">CrimeSight does not guess this answer. It compiles the question into allow-listed filters, returns matching records, and preserves the human decision boundary.</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
-                {[
-                  ['District', featuredCase.district],
-                  ['Risk score', `${featuredCase.riskScore}/100`],
-                  ['Case status', featuredCase.status],
-                ].map(([label, value]) => <div key={label} className="rounded-lg border border-white/[0.07] bg-white/[0.025] p-3"><p className="text-[10px] uppercase tracking-wider text-slate-500">{label}</p><p className="mt-1 text-sm font-semibold text-white">{value}</p></div>)}
+                {queryProof.filters.map(filter => <div key={filter} className="rounded-lg border border-white/[0.07] bg-white/[0.025] p-3"><p className="text-[10px] uppercase tracking-wider text-slate-500">Applied filter</p><p className="mt-1 text-sm font-semibold text-white">{filter}</p></div>)}
               </div>
+              <div className="overflow-x-auto rounded-xl border border-white/[0.07]"><table className="w-full min-w-[560px] text-left text-xs"><thead className="bg-black/20 text-[10px] uppercase tracking-wider text-slate-500"><tr><th className="px-4 py-3">FIR</th><th className="px-4 py-3">Crime type</th><th className="px-4 py-3">District</th><th className="px-4 py-3 text-right">Risk</th></tr></thead><tbody className="divide-y divide-white/[0.06]">{queryProof.cases.slice(0, 3).map(item => <tr key={item.id} className="text-slate-300"><td className="px-4 py-3 font-mono text-emerald-300">{item.fir}</td><td className="px-4 py-3">{item.crimeType}</td><td className="px-4 py-3">{item.district}</td><td className="px-4 py-3 text-right font-bold text-amber-300">{item.riskScore}</td></tr>)}</tbody></table></div>
             </div>
           )}
 
           {step === 1 && (
             <div className="space-y-4">
-              <div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400">Transparent reasoning</p><h3 className="mt-1 text-xl font-bold text-white">Why did CrimeSight surface this FIR?</h3><p className="mt-2 text-sm text-slate-400">The prototype exposes the simple, reviewable cues. It does not use an opaque model or decide an outcome.</p></div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {[
-                  ['Critical priority', 'The FIR requires time-sensitive supervisor attention.'],
-                  ['Repeat identifier', 'A repeat-pattern flag is present in the synthetic case record.'],
-                  [`${featuredCase.crimeCategory} offence`, 'Category is used only to group review workload.'],
-                  ['Open review status', 'The workflow prompts an officer to validate the next step.'],
-                ].map(([title, body], index) => <div key={title} className="rounded-xl border border-white/[0.07] bg-[#0d1623] p-4"><div className="mb-3 flex size-6 items-center justify-center rounded-full bg-emerald-500/10 text-xs font-bold text-emerald-300">{index + 1}</div><p className="text-sm font-semibold text-white">{title}</p><p className="mt-1 text-xs leading-relaxed text-slate-400">{body}</p></div>)}
-              </div>
+              <div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400">Judge challenge pack</p><h3 className="mt-1 text-xl font-bold text-white">CrimeSight refuses to invent a meaning.</h3><p className="mt-2 text-sm text-slate-400">A trustworthy system asks for clarification when a request cannot be translated into a verified FIR query.</p></div>
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-4"><p className="font-mono text-sm text-amber-100">“Show serious cases.”</p><p className="mt-3 text-sm text-slate-300">This is ambiguous. “Serious” could mean critical priority, violent offence, high risk, or an open investigation.</p><Button size="sm" onClick={() => setChallengeVisible(current => !current)} className="mt-4 bg-amber-600 text-xs text-white hover:bg-amber-500">{challengeVisible ? 'Hide interpretation check' : 'Challenge this interpretation'}</Button>{challengeVisible && <div className="mt-3 rounded-lg border border-white/[0.08] bg-black/20 p-3 text-xs leading-relaxed text-slate-300"><p className="font-semibold text-emerald-300">Safe response</p><p className="mt-1">Please specify whether you mean: <span className="text-white">High/Critical priority</span>, <span className="text-white">violent crime</span>, <span className="text-white">high risk score</span>, or <span className="text-white">open investigation</span>. No unverified results are shown.</p></div>}</div>
+              <div className="grid gap-3 sm:grid-cols-2">{[['No-result query', 'Returns “no matching FIRs” without filling the gap with speculation.'], ['Purpose boundary', 'Refuses non-FIR requests and stays within the synthetic-demo data scope.']].map(([title, body]) => <div key={title} className="rounded-xl border border-white/[0.07] bg-[#0d1623] p-4"><p className="text-sm font-semibold text-white">{title}</p><p className="mt-1 text-xs leading-relaxed text-slate-400">{body}</p></div>)}</div>
             </div>
           )}
 
@@ -128,6 +125,14 @@ export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand }: Prop
               </div>
             </div>
           )}
+
+          {step === 4 && (
+            <div className="space-y-5">
+              <div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400">End-to-end readiness</p><h3 className="mt-1 text-xl font-bold text-white">From field report to accountable review.</h3><p className="mt-2 text-sm text-slate-400">A field officer can submit a synthetic FIR, preserve its evidence metadata, and route the case into the same governed review workflow.</p></div>
+              <div className="grid gap-3 sm:grid-cols-4">{[['1', 'Field FIR', 'Officer submits structured report'], ['2', 'Catalyst intake', 'Report is persisted through the secure service'], ['3', 'Query Copilot', 'Verified questions surface relevant FIRs'], ['4', 'Human action', 'Approval or evidence request is audited']].map(([number, title, body]) => <div key={number} className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] p-4"><span className="text-lg font-bold text-emerald-300">{number}</span><p className="mt-3 text-sm font-semibold text-white">{title}</p><p className="mt-1 text-xs leading-relaxed text-slate-400">{body}</p></div>)}</div>
+              <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.06] p-3 text-xs leading-relaxed text-amber-100/85">All records used in this demo are reproducible synthetic data modeled on the supplied KSP ER schema. CrimeSight supports review; it never automates enforcement action.</div>
+            </div>
+          )}
         </div>
 
         <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.07] bg-black/15 px-4 py-3 sm:px-6">
@@ -135,6 +140,7 @@ export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand }: Prop
           <div className="flex items-center gap-2">
             {step === 2 && <Button variant="outline" size="sm" onClick={onOpenCaseCommand} className="border-cyan-500/20 bg-cyan-500/[0.06] text-xs text-cyan-100 hover:bg-cyan-500/[0.12]">Open case command card</Button>}
             {step === 3 && approved && <Button size="sm" onClick={openOperations} className="bg-emerald-600 text-xs hover:bg-emerald-500">View audit trail</Button>}
+            {step === 4 && <Button size="sm" onClick={onOpenFieldFir} className="bg-cyan-600 text-xs hover:bg-cyan-500">Open Field FIR</Button>}
             {step < steps.length - 1 && <Button size="sm" onClick={() => setStep(current => current + 1)} className="bg-emerald-600 text-xs hover:bg-emerald-500">Next <ChevronRight className="ml-1 size-3.5" /></Button>}
           </div>
         </footer>

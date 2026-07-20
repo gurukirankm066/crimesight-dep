@@ -306,7 +306,7 @@ export default function AIChatBar() {
                           {msg.role === 'ai' && msg.evidence && (
                             <div className="mt-2.5 rounded-md border border-emerald-500/15 bg-emerald-500/[0.035] p-2.5">
                               <div className="flex flex-wrap items-center justify-between gap-2">
-                                <span className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-emerald-300"><Database className="size-3" /> {msg.evidence.confidence}</span>
+                                <span className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-emerald-300"><Database className="size-3" /> Proof before action</span>
                                 <span className="font-mono text-[9px] text-slate-500">{msg.evidence.queryId}</span>
                               </div>
                               <div className="mt-2 flex flex-wrap gap-1">

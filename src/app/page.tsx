@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  Shield, BarChart3, TrendingUp, GitBranch, Target, FileText, Brain, Map,
+  Shield, BarChart3, GitBranch, FileText, Brain, Map,
   Search, Bell, Mic, ClipboardEdit, Sun, ClipboardCheck
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -38,13 +38,9 @@ import { useCrimeSightStore } from '@/lib/store'
 const tabs = [
   { value: 'map', label: 'Geo Intel', icon: Map, shortLabel: 'GEO' },
   { value: 'dashboard', label: 'Command', icon: BarChart3, shortLabel: 'CMD' },
-  // Keep governed workflow visible before the lower-priority analytical tabs on compact headers.
   { value: 'operations', label: 'Actions', icon: ClipboardCheck, shortLabel: 'ACT' },
-  { value: 'trends', label: 'Stats', icon: TrendingUp, shortLabel: 'STAT' },
   { value: 'network', label: 'Network', icon: GitBranch, shortLabel: 'LNK' },
-  { value: 'most-wanted', label: 'Targets', icon: Target, shortLabel: 'TGT' },
   { value: 'cases', label: 'FIRs', icon: FileText, shortLabel: 'FIR' },
-  { value: 'ai', label: 'Signals', icon: Brain, shortLabel: 'SIG' },
   { value: 'brief', label: 'Morning Brief', icon: Sun, shortLabel: 'BRIEF' },
 ] as const
 
@@ -436,7 +432,12 @@ export default function Home() {
           sourceCaseFir={dossierSourceFir}
         />
 
-        <JudgeDemoMode open={showJudgeDemo} onClose={() => setShowJudgeDemo(false)} onOpenCaseCommand={() => { setShowJudgeDemo(false); setShowCaseCommand(true) }} />
+        <JudgeDemoMode
+          open={showJudgeDemo}
+          onClose={() => setShowJudgeDemo(false)}
+          onOpenCaseCommand={() => { setShowJudgeDemo(false); setShowCaseCommand(true) }}
+          onOpenFieldFir={() => { setShowJudgeDemo(false); setShowFieldFir(true) }}
+        />
         <CaseCommandCard open={showCaseCommand} onClose={() => setShowCaseCommand(false)} />
 
         {/* ═══ FOOTER — AI Chat Prominent ═══ */}
