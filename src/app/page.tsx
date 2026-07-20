@@ -239,8 +239,8 @@ export default function Home() {
                 aria-label="Start judge demo"
               >
                 <Shield className="size-3" />
-                <span className="hidden xl:inline">Demo Mode</span>
-                <span className="xl:hidden">Demo</span>
+                <span className="hidden xl:inline">Judge Story</span>
+                <span className="xl:hidden">Judge</span>
               </button>
               {/* Voice FIR — accessible via ⌘K */}
               <button

@@ -26,26 +26,38 @@ const steps = [
 export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand, onOpenFieldFir }: Props) {
   const [step, setStep] = useState(0)
   const [challengeVisible, setChallengeVisible] = useState(false)
+  const [storyPlaying, setStoryPlaying] = useState(false)
   const setActiveTab = useCrimeSightStore(s => s.setActiveTab)
   const reviewActions = useCrimeSightStore(s => s.reviewActions)
   const recordReviewAction = useCrimeSightStore(s => s.recordReviewAction)
 
+  const queryProof = useMemo(() => runGovernedFirQuery('Show critical FIRs with repeat identifiers'), [])
   const featuredCase = useMemo(
-    () => GENERATED_CASES.find(item => item.priority === 'Critical' && item.hasRepeatOffender) ?? GENERATED_CASES[0],
-    [],
+    () => GENERATED_CASES.find(item => item.rowid === queryProof.cases[0]?.id) ?? GENERATED_CASES.find(item => item.priority === 'Critical' && item.hasRepeatOffender) ?? GENERATED_CASES[0],
+    [queryProof],
   )
-  const queryProof = useMemo(() => runGovernedFirQuery('Show high-risk cybercrime FIRs in Mysuru'), [])
 
   useEffect(() => {
     if (!open) return
     setStep(0)
     setChallengeVisible(false)
+    setStoryPlaying(false)
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [open, onClose])
+
+  useEffect(() => {
+    if (!storyPlaying || step >= 3) return
+    const timer = window.setTimeout(() => setStep(current => current + 1), 4200)
+    return () => window.clearTimeout(timer)
+  }, [storyPlaying, step])
+
+  useEffect(() => {
+    if (storyPlaying && step === 3) setStoryPlaying(false)
+  }, [storyPlaying, step])
 
   if (!open) return null
 
@@ -61,9 +73,9 @@ export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand, onOpen
       <section className="flex h-[88dvh] w-full max-w-4xl flex-col overflow-hidden rounded-t-2xl border border-emerald-400/20 bg-[#0a111c] shadow-2xl shadow-black/70 sm:h-auto sm:max-h-[88dvh] sm:rounded-2xl">
         <header className="flex items-start justify-between gap-3 border-b border-white/[0.07] bg-gradient-to-r from-emerald-500/[0.13] via-[#101b29] to-[#0a111c] px-4 py-4 sm:px-6">
           <div>
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-300"><ShieldCheck className="size-3.5" /> Judge demo mode</div>
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-300"><ShieldCheck className="size-3.5" /> Judge story mode <span className="rounded border border-emerald-400/25 bg-emerald-400/10 px-1.5 py-0.5 text-[9px] tracking-wider">90-SECOND FLOW</span></div>
             <h2 className="mt-1 text-lg font-bold text-white sm:text-xl">One FIR. From signal to accountable action.</h2>
-            <p className="mt-1 text-xs text-slate-400">Synthetic demonstration · human review required · no automated enforcement</p>
+            <p className="mt-1 text-xs text-slate-400">One FIR journey · synthetic demonstration · human review required · no automated enforcement</p>
           </div>
           <button onClick={onClose} className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-white" aria-label="Close demo mode"><X className="size-4" /></button>
         </header>
@@ -73,7 +85,7 @@ export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand, onOpen
             const Icon = item.icon
             const active = index === step
             const complete = index < step || (index === 3 && approved)
-            return <button key={item.label} onClick={() => setStep(index)} className={`flex min-w-0 items-center justify-center gap-1.5 border-b-2 px-1 py-3 text-[9px] font-bold uppercase tracking-wide transition-colors sm:text-[10px] ${active ? 'border-emerald-400 text-emerald-300' : complete ? 'border-transparent text-emerald-400/70' : 'border-transparent text-slate-600 hover:text-slate-400'}`}><Icon className="size-3 shrink-0" /><span className="hidden sm:inline">{item.label}</span></button>
+            return <button key={item.label} onClick={() => { setStoryPlaying(false); setStep(index) }} className={`flex min-w-0 items-center justify-center gap-1.5 border-b-2 px-1 py-3 text-[9px] font-bold uppercase tracking-wide transition-colors sm:text-[10px] ${active ? 'border-emerald-400 text-emerald-300' : complete ? 'border-transparent text-emerald-400/70' : 'border-transparent text-slate-600 hover:text-slate-400'}`}><Icon className="size-3 shrink-0" /><span className="hidden sm:inline">{item.label}</span></button>
           })}
         </div>
 
@@ -82,14 +94,14 @@ export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand, onOpen
             <div className="space-y-5">
               <div className="rounded-xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.12] to-transparent p-4 sm:p-5">
                 <div className="flex flex-wrap items-center gap-2"><Badge className="border-emerald-400/20 bg-emerald-500/15 text-[10px] text-emerald-200">PROOF BEFORE ACTION</Badge><Badge variant="outline" className="border-white/10 text-[10px] text-slate-300">Verified dataset query</Badge></div>
-                <p className="mt-3 text-sm font-semibold text-white">“Show high-risk cybercrime FIRs in Mysuru.”</p>
+                <p className="mt-3 text-sm font-semibold text-white">“Show critical FIRs with repeat identifiers.”</p>
                 <p className="mt-3 text-xl font-bold text-white">{queryProof.resultCount.toLocaleString()} matching FIRs <span className="text-slate-400">were found from the reproducible dataset.</span></p>
-                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300">CrimeSight does not guess this answer. It compiles the question into allow-listed filters, returns matching records, and preserves the human decision boundary.</p>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300">CrimeSight does not guess this answer. It compiles the question into allow-listed filters, returns matching records, and brings the first case — <span className="font-mono text-emerald-300">{featuredCase.fir}</span> — into this review journey.</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 {queryProof.filters.map(filter => <div key={filter} className="rounded-lg border border-white/[0.07] bg-white/[0.025] p-3"><p className="text-[10px] uppercase tracking-wider text-slate-500">Applied filter</p><p className="mt-1 text-sm font-semibold text-white">{filter}</p></div>)}
               </div>
-              <div className="overflow-x-auto rounded-xl border border-white/[0.07]"><table className="w-full min-w-[560px] text-left text-xs"><thead className="bg-black/20 text-[10px] uppercase tracking-wider text-slate-500"><tr><th className="px-4 py-3">FIR</th><th className="px-4 py-3">Crime type</th><th className="px-4 py-3">District</th><th className="px-4 py-3 text-right">Risk</th></tr></thead><tbody className="divide-y divide-white/[0.06]">{queryProof.cases.slice(0, 3).map(item => <tr key={item.id} className="text-slate-300"><td className="px-4 py-3 font-mono text-emerald-300">{item.fir}</td><td className="px-4 py-3">{item.crimeType}</td><td className="px-4 py-3">{item.district}</td><td className="px-4 py-3 text-right font-bold text-amber-300">{item.riskScore}</td></tr>)}</tbody></table></div>
+              <div className="overflow-x-auto rounded-xl border border-white/[0.07]"><table className="w-full min-w-[560px] text-left text-xs"><thead className="bg-black/20 text-[10px] uppercase tracking-wider text-slate-500"><tr><th className="px-4 py-3">FIR</th><th className="px-4 py-3">Crime type</th><th className="px-4 py-3">District</th><th className="px-4 py-3 text-right">Risk</th></tr></thead><tbody className="divide-y divide-white/[0.06]">{queryProof.cases.slice(0, 3).map(item => <tr key={item.id} className={`${item.id === featuredCase.rowid ? 'bg-emerald-500/[0.08]' : ''} text-slate-300`}><td className="px-4 py-3 font-mono text-emerald-300">{item.fir}{item.id === featuredCase.rowid && <span className="ml-2 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-sans font-bold uppercase tracking-wide text-emerald-200">Story case</span>}</td><td className="px-4 py-3">{item.crimeType}</td><td className="px-4 py-3">{item.district}</td><td className="px-4 py-3 text-right font-bold text-amber-300">{item.riskScore}</td></tr>)}</tbody></table></div>
             </div>
           )}
 
@@ -120,6 +132,7 @@ export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand, onOpen
           {step === 3 && (
             <div className="space-y-5">
               <div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400">Human authority</p><h3 className="mt-1 text-xl font-bold text-white">A person makes the operational decision.</h3><p className="mt-2 text-sm text-slate-400">The system presents evidence cues. A supervisor chooses whether the item deserves review and the action is recorded in the prototype audit trail.</p></div>
+              {!approved && <div className="rounded-lg border border-amber-500/25 bg-amber-500/[0.07] px-3 py-2 text-xs text-amber-100"><span className="font-bold">The story stops here.</span> CrimeSight can surface evidence, but only a supervisor may choose the next review step.</div>}
               <div className={`rounded-xl border p-5 ${approved ? 'border-emerald-400/30 bg-emerald-500/[0.08]' : 'border-white/[0.08] bg-[#0d1623]'}`}>
                 {approved ? <div className="flex items-start gap-3"><CheckCircle2 className="mt-0.5 size-6 shrink-0 text-emerald-400" /><div><p className="font-semibold text-emerald-200">Review approved by prototype supervisor</p><p className="mt-1 text-xs leading-relaxed text-slate-400">The shared Actions workspace now carries this audit entry. The FIR remains subject to normal human investigation.</p></div></div> : <><p className="text-sm font-semibold text-white">Recommended action: review linked FIRs and nominate a lead investigator.</p><p className="mt-1 text-xs leading-relaxed text-slate-400">Approval does not trigger enforcement. It only records a supervisor&apos;s decision to review the case.</p><Button onClick={() => recordReviewAction({ firId: featuredCase.rowid, fir: featuredCase.fir, status: 'Approved', actor: 'Prototype supervisor', reason: 'Review linked FIRs and nominate a lead investigator.' })} className="mt-4 bg-emerald-600 text-xs hover:bg-emerald-500"><CheckCircle2 className="mr-1.5 size-3.5" /> Approve review</Button></>}
               </div>
@@ -136,12 +149,13 @@ export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand, onOpen
         </div>
 
         <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.07] bg-black/15 px-4 py-3 sm:px-6">
-          <Button variant="ghost" size="sm" onClick={() => step === 0 ? onClose() : setStep(current => current - 1)} className="text-xs text-slate-400 hover:text-white"><ChevronLeft className="mr-1 size-3.5" /> {step === 0 ? 'Exit' : 'Back'}</Button>
+          <Button variant="ghost" size="sm" onClick={() => { setStoryPlaying(false); step === 0 ? onClose() : setStep(current => current - 1) }} className="text-xs text-slate-400 hover:text-white"><ChevronLeft className="mr-1 size-3.5" /> {step === 0 ? 'Exit' : 'Back'}</Button>
           <div className="flex items-center gap-2">
+            {step === 0 && <Button variant="outline" size="sm" onClick={() => setStoryPlaying(true)} className="border-emerald-500/25 bg-emerald-500/[0.06] text-xs text-emerald-100 hover:bg-emerald-500/[0.14]">{storyPlaying ? 'Guided story playing…' : 'Start guided story'}</Button>}
             {step === 2 && <Button variant="outline" size="sm" onClick={onOpenCaseCommand} className="border-cyan-500/20 bg-cyan-500/[0.06] text-xs text-cyan-100 hover:bg-cyan-500/[0.12]">Open case command card</Button>}
             {step === 3 && approved && <Button size="sm" onClick={openOperations} className="bg-emerald-600 text-xs hover:bg-emerald-500">View audit trail</Button>}
             {step === 4 && <Button size="sm" onClick={onOpenFieldFir} className="bg-cyan-600 text-xs hover:bg-cyan-500">Open Field FIR</Button>}
-            {step < steps.length - 1 && <Button size="sm" onClick={() => setStep(current => current + 1)} className="bg-emerald-600 text-xs hover:bg-emerald-500">Next <ChevronRight className="ml-1 size-3.5" /></Button>}
+            {step < steps.length - 1 && !(step === 3 && !approved) && <Button size="sm" onClick={() => { setStoryPlaying(false); setStep(current => current + 1) }} className="bg-emerald-600 text-xs hover:bg-emerald-500">Next <ChevronRight className="ml-1 size-3.5" /></Button>}
           </div>
         </footer>
       </section>
