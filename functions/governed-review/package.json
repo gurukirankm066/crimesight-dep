@@ -1,0 +1,9 @@
+{
+	"name": "governed-review",
+	"version": "1.0.0",
+	"main": "index.js",
+	"author": "CrimeSight AI",
+	"dependencies": {
+		"zcatalyst-sdk-node": "latest"
+	}
+}
