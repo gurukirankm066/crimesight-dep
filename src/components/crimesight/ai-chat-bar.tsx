@@ -190,6 +190,23 @@ export default function AIChatBar() {
     }, 50)
   }
 
+  const closeChat = useCallback(() => {
+    setIsExpanded(false)
+    setMessage('')
+    setChatHistory([])
+  }, [])
+
+  useEffect(() => {
+    if (!isExpanded) return
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeChat()
+    }
+
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [isExpanded, closeChat])
+
   return (
     <div className="relative flex flex-col">
       {/* ── Expanded Chat Area ── */}
@@ -210,11 +227,14 @@ export default function AIChatBar() {
                 </span>
               </div>
               <button
-                onClick={() => setChatHistory([])}
+                type="button"
+                onClick={closeChat}
+                aria-label="Close CrimeSight AI"
+                title="Close (Esc)"
                 className="text-[10px] text-slate-500 hover:text-red-400 transition-colors flex items-center gap-1"
               >
                 <X className="size-2.5" />
-                Clear
+                Close
               </button>
             </div>
 
