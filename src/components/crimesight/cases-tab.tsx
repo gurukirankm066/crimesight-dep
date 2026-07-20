@@ -84,11 +84,33 @@ function GeneratedFirDetail({
   kase,
   onCaseCracker,
   onViewDistrict,
+  onOpenGovernedReview,
 }: {
   kase: GeneratedCase
   onCaseCracker: () => void
   onViewDistrict: () => void
+  onOpenGovernedReview: () => void
 }) {
+  const reviewPlan = kase.hasRepeatOffender
+    ? {
+        action: 'Validate linked FIRs and nominate a lead investigator.',
+        evidence: 'Cross-reference the identifier and existing evidence before escalation.',
+      }
+    : kase.isSensitive
+      ? {
+          action: 'Confirm safeguarding protocol with a supervisor.',
+          evidence: 'Check access controls and the safeguarding record before further review.',
+        }
+      : {
+          action: 'Triage the case with the district review officer.',
+          evidence: 'Validate the FIR facts and initial evidence checklist before follow-up.',
+        }
+  const reviewTarget = kase.priority === 'Critical'
+    ? 'Prototype target: supervisor review within 2 hours'
+    : kase.priority === 'High'
+      ? 'Prototype target: supervisor review within 1 working day'
+      : 'Prototype target: review at the next district triage'
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -6 }}
@@ -123,6 +145,21 @@ function GeneratedFirDetail({
             ? 'A repeat-pattern indicator is present. Validate against source records before taking any operational action.'
             : 'No validated cross-record link is displayed for this generated case. Continue review using the FIR details and local procedure.'}
         </p>
+      </div>
+
+      <div className="mt-4 rounded-xl border border-sky-500/20 bg-sky-500/[0.045] p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-sky-300"><ClipboardEdit className="size-3.5" /> Explainable case action plan</p>
+            <p className="mt-2 text-xs font-medium text-slate-200">{reviewPlan.action}</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-slate-400">Evidence needed: {reviewPlan.evidence}</p>
+            <p className="mt-2 flex items-center gap-1 text-[10px] text-slate-500"><Clock className="size-3" /> {reviewTarget}</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={onOpenGovernedReview} className="h-7 shrink-0 border-sky-500/25 bg-sky-500/[0.04] px-2.5 text-[10px] text-sky-200 hover:bg-sky-500/[0.12]">
+            <ClipboardEdit className="mr-1 size-3" /> Review in Actions
+          </Button>
+        </div>
+        <p className="mt-3 border-t border-sky-500/10 pt-2 text-[9px] leading-relaxed text-slate-500">This is a transparent, synthetic demonstration plan. It supports human review and does not direct enforcement action.</p>
       </div>
 
       <div className="flex items-center gap-2 pt-2 mt-3 border-t border-white/[0.04]">
@@ -594,6 +631,7 @@ export default function CasesTab() {
                             kase={kase}
                             onCaseCracker={() => setCrackCase({ caseId: kase.rowid, fir: kase.fir, crimeType: kase.crimeType, district: kase.district })}
                             onViewDistrict={() => navigateToDistrict(kase.districtRowid)}
+                            onOpenGovernedReview={() => setActiveTab('operations')}
                           />
                         </td>
                       </tr>
