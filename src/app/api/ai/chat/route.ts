@@ -1,39 +1,30 @@
-import ZAI from 'z-ai-web-dev-sdk'
+import { runGovernedFirQuery } from '@/lib/query-copilot'
 
 export async function POST(request: Request) {
   try {
-    const { messages, question, history } = await request.json()
+    const { messages, question } = await request.json()
+    const latestMessage = question ?? messages?.filter((message: { role?: string }) => message.role === 'user').at(-1)?.content
 
-    // Support both { messages: [...] } and { question, history } formats
-    let chatMessages = messages
-    if (!chatMessages && question) {
-      chatMessages = [
-        ...(history || []).map((m: { role: string; content: string }) => ({
-          role: m.role === 'assistant' ? 'assistant' : 'user',
-          content: m.content,
-        })),
-        { role: 'user', content: question },
-      ]
+    if (typeof latestMessage !== 'string' || !latestMessage.trim()) {
+      return Response.json({ error: 'No question provided' }, { status: 400 })
     }
 
-    if (!chatMessages?.length) {
-      return Response.json({ error: 'No messages provided' }, { status: 400 })
-    }
-
-    const zai = await ZAI.create()
-    const response = await zai.chat.completions.create({
-      messages: [
-        {
-          role: 'system',
-          content: 'You are CrimeSight AI, an intelligent crime analysis assistant for Karnataka State Police. Provide concise, professional responses about crime data, patterns, and investigations. Use data from the context when available.',
-        },
-        ...chatMessages,
-      ],
+    // Controlled dataset query: no generated SQL and no unverified model answer.
+    // This keeps the prototype reproducible and makes each answer explainable.
+    return Response.json(runGovernedFirQuery(latestMessage), {
+      headers: { 'Cache-Control': 'no-store' },
     })
-
-    const reply = response.choices[0]?.message?.content || 'Unable to generate response.'
-    return Response.json({ reply })
   } catch {
-    return Response.json({ reply: 'AI service temporarily unavailable. Please use the synthetic prototype views while the assistant reconnects.' }, { status: 503 })
+    return Response.json({
+      reply: 'The governed query service is temporarily unavailable. Please retry your FIR question.',
+      intent: 'unsupported',
+      filters: ['Service unavailable'],
+      resultCount: 0,
+      totalDatasetCount: 0,
+      cases: [],
+      confidence: 'Needs clarification',
+      queryId: 'QRY-UNAVAILABLE',
+      dataBoundary: 'Synthetic demo dataset only — not live operational police data.',
+    }, { status: 503 })
   }
 }

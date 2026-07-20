@@ -3,7 +3,7 @@
 import React from 'react'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
-import { Send, ChevronUp, ChevronDown, Sparkles, X, RotateCcw } from 'lucide-react'
+import { Send, ChevronUp, ChevronDown, Sparkles, X, RotateCcw, Database, ShieldCheck } from 'lucide-react'
 
 /* ═══════════════════════════════════════════════════════════════
    MARKDOWN RENDERING
@@ -70,16 +70,38 @@ function renderMarkdown(text: string): React.ReactNode[] {
    ═══════════════════════════════════════════════════════════════ */
 
 const SUGGESTED_QUERIES = [
-  'Show repeat offenders in Bengaluru',
-  'Analyze crime spike in Kalaburagi',
-  'Operation Black Lotus status',
+  'Show high-risk cybercrime FIRs in Mysuru',
+  'How many repeat-pattern FIRs are open?',
+  'What is the most common crime in Bengaluru Urban?',
 ]
+
+interface QueryEvidence {
+  intent: 'case-search' | 'aggregate' | 'unsupported'
+  filters: string[]
+  resultCount: number
+  totalDatasetCount: number
+  cases: Array<{
+    id: string
+    fir: string
+    crimeType: string
+    district: string
+    priority: string
+    status: string
+    riskScore: number
+    occurrenceDate: string
+    repeatPattern: boolean
+  }>
+  confidence: 'Verified dataset query' | 'Needs clarification'
+  queryId: string
+  dataBoundary: string
+}
 
 interface ChatMessage {
   id: string
   role: 'user' | 'ai'
   content: string
   timestamp: Date
+  evidence?: QueryEvidence
 }
 
 const FALLBACK_MESSAGE = 'Unable to connect to CrimeSight AI. Retrying...'
@@ -138,6 +160,7 @@ export default function AIChatBar() {
       }))
 
       let answer: string
+      let evidence: QueryEvidence | undefined
 
       try {
         const res = await fetch('/api/ai/chat', {
@@ -152,6 +175,9 @@ export default function AIChatBar() {
 
         const data = await res.json()
         answer = data.reply || FALLBACK_MESSAGE
+        if (data.queryId && Array.isArray(data.filters) && Array.isArray(data.cases)) {
+          evidence = data as QueryEvidence
+        }
       } catch {
         answer = FALLBACK_MESSAGE
       }
@@ -161,6 +187,7 @@ export default function AIChatBar() {
         role: 'ai',
         content: answer,
         timestamp: new Date(),
+        evidence,
       }
 
       setChatHistory((prev) => [...prev, aiMsg])
@@ -273,6 +300,27 @@ export default function AIChatBar() {
                           <div className="text-[13px] leading-relaxed space-y-0.5">
                             {msg.role === 'ai' ? renderMarkdown(msg.content) : msg.content}
                           </div>
+                          {msg.role === 'ai' && msg.evidence && (
+                            <div className="mt-2.5 rounded-md border border-emerald-500/15 bg-emerald-500/[0.035] p-2.5">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <span className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-emerald-300"><Database className="size-3" /> {msg.evidence.confidence}</span>
+                                <span className="font-mono text-[9px] text-slate-500">{msg.evidence.queryId}</span>
+                              </div>
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {msg.evidence.filters.map(filter => <span key={filter} className="rounded border border-white/[0.07] bg-black/15 px-1.5 py-0.5 text-[9px] text-slate-400">{filter}</span>)}
+                              </div>
+                              <p className="mt-2 text-[9px] text-slate-500">{msg.evidence.resultCount.toLocaleString()} matching records from {msg.evidence.totalDatasetCount.toLocaleString()} reproducible FIR records.</p>
+                              {msg.evidence.cases.length > 0 && (
+                                <div className="mt-2 overflow-x-auto rounded border border-white/[0.06]">
+                                  <table className="w-full min-w-[430px] text-left text-[9px]">
+                                    <thead className="bg-black/20 uppercase tracking-wider text-slate-500"><tr><th className="px-2 py-1.5">FIR</th><th className="px-2 py-1.5">Crime / district</th><th className="px-2 py-1.5">Status</th><th className="px-2 py-1.5 text-right">Risk</th></tr></thead>
+                                    <tbody className="divide-y divide-white/[0.05]">{msg.evidence.cases.map(item => <tr key={item.id} className="text-slate-300"><td className="whitespace-nowrap px-2 py-1.5 font-mono text-emerald-300">{item.fir}</td><td className="px-2 py-1.5"><span className="block">{item.crimeType}</span><span className="text-slate-500">{item.district}</span></td><td className="px-2 py-1.5 text-slate-400">{item.status}</td><td className="px-2 py-1.5 text-right font-semibold text-amber-300">{item.riskScore}</td></tr>)}</tbody>
+                                  </table>
+                                </div>
+                              )}
+                              <p className="mt-2 flex items-start gap-1 text-[9px] leading-relaxed text-amber-300/70"><ShieldCheck className="mt-0.5 size-3 shrink-0" /> {msg.evidence.dataBoundary}</p>
+                            </div>
+                          )}
                         </div>
                         {msg.role === 'ai' && msg.content === FALLBACK_MESSAGE && (
                           <button
