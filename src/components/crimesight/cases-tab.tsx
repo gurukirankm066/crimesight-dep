@@ -538,7 +538,67 @@ export default function CasesTab() {
 
         {/* Expanded row detail */}
         {effectiveExpandedRow && (() => {
-          const kase = KSP_CASES.find(x => x.rowid === effectiveExpandedRow)
+          const selectedCase = ALL_CASES.find(x => x.rowid === effectiveExpandedRow)
+          if (!selectedCase) return null
+
+          // The first 10,000 registry entries are generated cases. They do not
+          // have the rich nested KSP records below, but must still open into a
+          // useful, honest case summary rather than appearing unresponsive.
+          if (isGenerated(selectedCase)) {
+            const kase = selectedCase
+            return (
+              <motion.div
+                key={`detail-${kase.rowid}`}
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="border-t border-white/[0.06] p-5 bg-white/[0.02]"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div>
+                    <p className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">FIR case summary</p>
+                    <p className="text-[10px] text-slate-500 mt-1">Synthetic prototype record — use for demonstration and review only.</p>
+                  </div>
+                  <Badge variant="outline" className={`text-[9px] px-1.5 shrink-0 ${PRIORITY_STYLES[kase.priority] || ''}`}>
+                    {kase.priority} priority
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                  <div><p className="text-slate-500 mb-1">FIR Number</p><p className="font-mono text-emerald-400">{kase.fir}</p></div>
+                  <div><p className="text-slate-500 mb-1">Crime classification</p><p className="text-slate-300">{kase.crimeType}</p><p className="text-[10px] text-slate-600 mt-0.5">{kase.crimeCategory}</p></div>
+                  <div><p className="text-slate-500 mb-1">Place of occurrence</p><p className="text-slate-300">{kase.place}</p><p className="text-[10px] text-slate-600 mt-0.5">{kase.district}</p></div>
+                  <div><p className="text-slate-500 mb-1">Case status</p><p className="text-slate-300">{kase.status}</p><p className="text-[10px] text-slate-600 mt-0.5">{kase.complaintMode}</p></div>
+                  <div><p className="text-slate-500 mb-1">Occurrence</p><p className="text-slate-300">{kase.occurrenceDate}</p></div>
+                  <div><p className="text-slate-500 mb-1">Complaint filed</p><p className="text-slate-300">{kase.complaintDate}</p></div>
+                  <div><p className="text-slate-500 mb-1">Risk score</p><p className="font-bold" style={{ color: RISK_COLORS[getRiskColor(kase.riskScore)] }}>{Math.round(kase.riskScore)}/100</p></div>
+                  <div><p className="text-slate-500 mb-1">Record indicators</p><p className="text-slate-300">{kase.suspectCount} suspect cue{kase.suspectCount !== 1 ? 's' : ''} · {kase.evidenceCount} evidence cue{kase.evidenceCount !== 1 ? 's' : ''}</p></div>
+                </div>
+
+                <div className="mt-4 p-4 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/15">
+                  <p className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider mb-1.5 flex items-center gap-1.5"><Shield className="size-3.5" /> Review cue</p>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    {kase.hasRepeatOffender
+                      ? 'A repeat-pattern indicator is present. Validate against source records before taking any operational action.'
+                      : 'No validated cross-record link is displayed for this generated case. Continue review using the FIR details and local procedure.'}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 pt-2 mt-3 border-t border-white/[0.04]">
+                  <Button variant="outline" size="sm" onClick={() => setCrackCase({ caseId: kase.rowid, fir: kase.fir, crimeType: kase.crimeType, district: kase.district })} className="h-7 px-3 text-[10px] border-red-500/20 text-red-400 hover:bg-red-500/10 hover:text-red-300 hover:border-red-500/30">
+                    <SearchIcon className="size-3 mr-1.5" /> Case Cracker
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigateToDistrict(kase.districtRowid)} className="h-7 px-3 text-[10px] border-white/10 hover:bg-emerald-500/10 hover:border-emerald-500/30 text-slate-300 hover:text-emerald-300">
+                    <MapPin className="size-3 mr-1.5" /> View District
+                  </Button>
+                  <span className="ml-auto text-[9px] text-slate-600">Record ID: {kase.rowid}</span>
+                </div>
+              </motion.div>
+            )
+          }
+
+          const kase = selectedCase
           if (!kase) return null
           const brief = getCaseIntelligenceBrief(kase.rowid)
           const linkedCases = getLinkedCases(kase.rowid)
