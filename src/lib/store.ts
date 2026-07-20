@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { fetchGovernedReviewActions, isGovernedReviewApiConfigured, saveGovernedReviewAction } from '@/lib/governed-review-client'
+import { fetchFieldFirReports, isFieldFirApiConfigured, submitFieldFir, type FieldFirSubmission } from '@/lib/field-fir-client'
 
 export type TabValue = 'map' | 'dashboard' | 'trends' | 'network' | 'most-wanted' | 'cases' | 'ai' | 'brief' | 'operations'
 
@@ -33,6 +34,8 @@ export interface FieldFirReport {
   assignedTo?: string
   lastStatusUpdate?: string
   isSample?: boolean
+  source?: 'local' | 'catalyst'
+  correlationId?: string
 }
 
 export type ReviewStatus = 'Approved' | 'Needs evidence'
@@ -111,7 +114,9 @@ interface CrimeSightState {
 
   // ── Field FIR Reports ──
   fieldFirReports: FieldFirReport[]
-  addFieldFir: (report: Omit<FieldFirReport, 'id' | 'fir' | 'submittedAt' | 'status' | 'lastStatusUpdate'>) => void
+  fieldFirStorage: 'local' | 'syncing' | 'catalyst' | 'unavailable'
+  hydrateFieldFirReports: () => Promise<void>
+  addFieldFir: (report: Omit<FieldFirReport, 'id' | 'fir' | 'submittedAt' | 'status' | 'lastStatusUpdate' | 'source' | 'correlationId'>) => Promise<FieldFirReport>
   updateFieldFirStatus: (id: string, status: FieldFirStatus, assignedTo?: string) => void
   showFieldFirsOnly: boolean
   setShowFieldFirsOnly: (v: boolean) => void
@@ -249,7 +254,7 @@ const SAMPLE_FIELD_FIRS: FieldFirReport[] = [
   },
 ]
 
-export const useCrimeSightStore = create<CrimeSightState>()(persist((set) => ({
+export const useCrimeSightStore = create<CrimeSightState>()(persist((set, get) => ({
   // ── Navigation ──
   activeTab: 'map',
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -309,20 +314,54 @@ export const useCrimeSightStore = create<CrimeSightState>()(persist((set) => ({
 
   // ── Field FIR Reports ──
   fieldFirReports: SAMPLE_FIELD_FIRS,
-  addFieldFir: (report) => set((s) => {
-    const id = `FIELD-${Date.now()}`
-    const seq = String(s.fieldFirReports.length + 1).padStart(5, '0')
-    const now = new Date().toISOString().replace('T', ' ').slice(0, 19)
-    const newReport: FieldFirReport = {
-      ...report,
-      id,
-      fir: `FIR/2026/KSP/FIELD-${seq}`,
-      submittedAt: now,
-      status: 'Submitted',
-      lastStatusUpdate: now,
+  fieldFirStorage: isFieldFirApiConfigured() ? 'syncing' : 'local',
+  hydrateFieldFirReports: async () => {
+    if (!isFieldFirApiConfigured()) return
+    try {
+      const reports = await fetchFieldFirReports()
+      set((state) => ({
+        fieldFirReports: [
+          ...reports.map(report => ({ ...report, source: 'catalyst' as const })),
+          ...state.fieldFirReports.filter(local => !reports.some(remote => remote.id === local.id)),
+        ],
+        fieldFirStorage: 'catalyst',
+      }))
+    } catch {
+      set({ fieldFirStorage: 'unavailable' })
     }
-    return { fieldFirReports: [newReport, ...s.fieldFirReports] }
-  }),
+  },
+  addFieldFir: async (report) => {
+    const localReport = (() => {
+      const state = get()
+      const id = `FIELD-${Date.now()}`
+      const seq = String(state.fieldFirReports.length + 1).padStart(5, '0')
+      const now = new Date().toISOString().replace('T', ' ').slice(0, 19)
+      return {
+        ...report,
+        id,
+        fir: `FIR/2026/KSP/FIELD-${seq}`,
+        submittedAt: now,
+        status: 'Submitted' as const,
+        lastStatusUpdate: now,
+        source: 'local' as const,
+      }
+    })()
+    set((state) => ({ fieldFirReports: [localReport, ...state.fieldFirReports] }))
+
+    if (!isFieldFirApiConfigured()) return localReport
+    try {
+      const saved = await submitFieldFir(report as FieldFirSubmission)
+      const remoteReport = { ...saved, source: 'catalyst' as const }
+      set((state) => ({
+        fieldFirReports: [remoteReport, ...state.fieldFirReports.filter(existing => existing.id !== localReport.id)],
+        fieldFirStorage: 'catalyst',
+      }))
+      return remoteReport
+    } catch {
+      set({ fieldFirStorage: 'unavailable' })
+      return localReport
+    }
+  },
   updateFieldFirStatus: (id, status, assignedTo) => set((s) => ({
     fieldFirReports: s.fieldFirReports.map(r =>
       r.id === id ? { ...r, status, assignedTo: assignedTo ?? r.assignedTo, lastStatusUpdate: new Date().toISOString().replace('T', ' ').slice(0, 19) } : r

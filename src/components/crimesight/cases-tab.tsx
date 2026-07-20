@@ -188,8 +188,13 @@ export default function CasesTab() {
   const {
     selectedFirId, navigateToDistrict,
     openDossier, setActiveTab,
-    fieldFirReports, showFieldFirsOnly, setShowFieldFirsOnly, updateFieldFirStatus,
+    fieldFirReports, fieldFirStorage, hydrateFieldFirReports,
+    showFieldFirsOnly, setShowFieldFirsOnly, updateFieldFirStatus,
   } = useCrimeSightStore()
+
+  useEffect(() => {
+    void hydrateFieldFirReports()
+  }, [hydrateFieldFirReports])
 
   // When navigated from another tab, selectedFirId takes precedence for expansion
   const effectiveExpandedRow = selectedFirId || expandedRow
@@ -237,9 +242,14 @@ export default function CasesTab() {
             {showFieldFirsOnly ? 'Field FIR Reports' : 'FIR Registry'}
           </h2>
           {showFieldFirsOnly && (
-            <Badge className="h-4 px-1.5 text-[9px] font-bold bg-cyan-500/10 text-cyan-400 border-cyan-500/20">
-              {fieldFirReports.length} field reports
-            </Badge>
+            <>
+              <Badge className="h-4 px-1.5 text-[9px] font-bold bg-cyan-500/10 text-cyan-400 border-cyan-500/20">
+                {fieldFirReports.length} field reports
+              </Badge>
+              <Badge className="h-4 px-1.5 text-[9px] font-medium bg-white/[0.03] text-slate-400 border-white/10">
+                {fieldFirStorage === 'catalyst' ? 'Catalyst stored' : fieldFirStorage === 'syncing' ? 'Syncing' : fieldFirStorage === 'unavailable' ? 'Local fallback' : 'Local demo'}
+              </Badge>
+            </>
           )}
         </div>
         <div className="flex items-center gap-3">

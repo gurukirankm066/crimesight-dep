@@ -270,7 +270,7 @@ export default function FieldFirModal({ open, onClose }: FieldFirModalProps) {
       timestamp: new Date().toISOString(),
     }))
 
-    addFieldFir({
+    const savedReport = await addFieldFir({
       officerName: officerName.trim(),
       badgeNumber: badgeNumber.trim(),
       district,
@@ -282,11 +282,11 @@ export default function FieldFirModal({ open, onClose }: FieldFirModalProps) {
       photos: storePhotos,
     })
 
-    // Derive the FIR number that was just generated
-    const currentCount = useCrimeSightStore.getState().fieldFirReports.length
-    const fir = `FIR/2026/KSP/FIELD-${String(currentCount).padStart(5, '0')}`
-
-    toast.success(`Field FIR submitted — ${fir}`)
+    toast.success(
+      savedReport.source === 'catalyst'
+        ? `Field FIR securely recorded — ${savedReport.fir}`
+        : `Field FIR submitted locally — ${savedReport.fir}`,
+    )
 
     // Reset form
     setOfficerName('')
