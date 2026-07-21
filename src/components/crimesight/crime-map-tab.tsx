@@ -131,6 +131,30 @@ const GEOJSON_TO_DB: Record<string, string> = {
   'Vijayapura': 'Vijayapura',
 }
 
+/* A few compact districts sit close together. These offsets keep desktop labels
+   readable while the map hides non-selected labels on narrow screens. */
+const DISTRICT_LABEL_OFFSETS: Record<string, { x: number; y: number }> = {
+  'Vijayanagara': { x: 0, y: -8 },
+  'Davanagere': { x: -15, y: 15 },
+  'Gadag': { x: -13, y: 8 },
+  'Haveri': { x: -15, y: 2 },
+  'Bengaluru Urban': { x: 17, y: 14 },
+  'Bengaluru Rural': { x: 22, y: -9 },
+  'Ramanagara': { x: -10, y: 18 },
+  'Chikkaballapur': { x: 16, y: -2 },
+  'Kolar': { x: 13, y: 12 },
+  'Mandya': { x: -10, y: -8 },
+  'Chamarajanagar': { x: 9, y: 13 },
+}
+
+const COMPACT_DISTRICT_LABELS: Record<string, string> = {
+  'Bengaluru Urban': 'Bengaluru U.',
+  'Bengaluru Rural': 'Bengaluru R.',
+  'Chikkamagaluru': 'Chikkamagaluru',
+  'Dakshina Kannada': 'D. Kannada',
+  'Uttara Kannada': 'U. Kannada',
+}
+
 /* ─── Color helpers ─── */
 function getCaseColor(totalCases: number, p33: number, p66: number): string {
   if (totalCases <= p33) return '#22c55e'
@@ -159,17 +183,11 @@ const PRIORITY_BORDER: Record<string, string> = {
   Critical: 'border-l-red-500', High: 'border-l-amber-500', Medium: 'border-l-yellow-500', Low: 'border-l-slate-500',
 }
 
-function timeAgo(dateStr: string): string {
+function formatDemoTimestamp(dateStr: string): string {
   if (!dateStr) return '—'
-  const then = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - then.getTime()
-  const minutes = Math.floor(diffMs / 60000)
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  return `${Math.floor(hours / 24)}d ago`
+  const date = new Date(dateStr.replace(' ', 'T'))
+  if (Number.isNaN(date.getTime())) return dateStr
+  return new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }).format(date)
 }
 
 /* ─── Component ─── */
@@ -197,7 +215,11 @@ export default function CrimeMapTab() {
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
-  const { selectedDistrict: storeSelectedDistrict, setSelectedDistrict: storeSetSelectedDistrict } = useCrimeSightStore()
+  const {
+    selectedDistrict: storeSelectedDistrict,
+    setSelectedDistrict: storeSetSelectedDistrict,
+    navigateToDistrictCases,
+  } = useCrimeSightStore()
 
   // Respond to cross-tab district navigation
   useEffect(() => {
@@ -503,6 +525,9 @@ export default function CrimeMapTab() {
                 const strokeWidth = isSelected ? 2.5 : isHovered ? 1.5 : drillDown && !isDimmed ? 1 : 0.5
                 const centroid = geoCentroid(feature)
                 const [cx, cy] = projection(centroid) ?? [0, 0]
+                const labelOffset = DISTRICT_LABEL_OFFSETS[dbName] ?? { x: 0, y: 0 }
+                const showLabel = svgDimensions.width >= 880 || isSelected || isHovered
+                const label = svgDimensions.width < 1040 ? (COMPACT_DISTRICT_LABELS[dbName] ?? dbName) : dbName
                 return (
                   <g key={`${geoName}-${i}`}>
                     <path d={pathGenerator(feature) || ''} fill={fill} stroke={strokeColor} strokeWidth={strokeWidth} className="cursor-pointer transition-all duration-150"
@@ -515,11 +540,11 @@ export default function CrimeMapTab() {
                       onClick={() => !drillDown && handleDistrictClick(geoName, feature)}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleDistrictClick(geoName, feature) } }}
                     />
-                    <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" className="pointer-events-none select-none"
+                    {showLabel && <text x={cx + labelOffset.x} y={cy + labelOffset.y} textAnchor="middle" dominantBaseline="central" className="pointer-events-none select-none"
                       fill={isDimmed ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)'} fontSize={drillDown && isDimmed ? 7 : 8} fontWeight={isSelected ? 700 : 500}
-                      style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>{dbName}</text>
-                    {cases > 0 && !isDimmed && (
-                      <text x={cx} y={cy + 12} textAnchor="middle" dominantBaseline="central" className="pointer-events-none select-none"
+                      style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>{label}</text>}
+                    {cases > 0 && !isDimmed && showLabel && (
+                      <text x={cx + labelOffset.x} y={cy + labelOffset.y + 12} textAnchor="middle" dominantBaseline="central" className="pointer-events-none select-none"
                         fill="rgba(255,255,255,0.5)" fontSize={7} fontWeight={600}>{cases}</text>
                     )}
                   </g>
@@ -603,10 +628,19 @@ export default function CrimeMapTab() {
                 <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] shrink-0">
                   <div className="min-w-0">
                     <h3 className="text-sm font-bold text-white truncate">{selectedDistrict.name}</h3>
-                    <p className="text-[10px] text-slate-500 mt-0.5">{drillDown.totalCases} total cases in district</p>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Showing FIRs mapped to {drillDown.district} · {drillDown.totalCases} total cases</p>
                   </div>
                   <button onClick={handleBackToMap} className="p-1.5 rounded-lg hover:bg-white/[0.08] transition-colors text-slate-400 hover:text-white shrink-0 ml-2" aria-label="Close drill-down panel">
                     <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="px-3 pt-3 shrink-0">
+                  <button
+                    onClick={() => navigateToDistrictCases(drillDown.district)}
+                    className="w-full rounded-lg border border-emerald-500/25 bg-emerald-500/[0.08] px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-emerald-300 transition-colors hover:bg-emerald-500/[0.15]"
+                  >
+                    View all {drillDown.totalCases} FIRs in {drillDown.district}
                   </button>
                 </div>
 
@@ -660,7 +694,10 @@ export default function CrimeMapTab() {
 
                 {/* Recent 5 Cases */}
                 <div className="flex-1 min-h-0 border-t border-white/[0.06] px-3 pt-2 pb-3 flex flex-col">
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-2 shrink-0">Recent Cases</p>
+                  <div className="mb-2 flex items-center justify-between gap-2 shrink-0">
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider">Latest FIRs in {drillDown.district}</p>
+                    <span className="text-[9px] text-slate-600">5 of {drillDown.totalCases}</span>
+                  </div>
                   <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1.5 min-h-0">
                     {drillDown.cases.slice(0, 5).map(c => (
                       <div key={c.fir} className="bg-white/[0.02] rounded-lg px-2.5 py-2 border border-white/[0.04] hover:bg-white/[0.04] transition-colors">
@@ -671,7 +708,7 @@ export default function CrimeMapTab() {
                           </Badge>
                         </div>
                         <div className="text-[10px] text-slate-400 truncate">{c.crimeType} · {c.place}</div>
-                        <div className="text-[9px] text-slate-600 mt-0.5">{timeAgo(c.date)}</div>
+                        <div className="text-[9px] text-slate-600 mt-0.5">{formatDemoTimestamp(c.date)}</div>
                       </div>
                     ))}
                   </div>
@@ -866,7 +903,7 @@ export default function CrimeMapTab() {
                         <span>{alert.crimeType}</span>
                         <span className="text-slate-700">·</span>
                         <span className="flex items-center gap-0.5"><MapPin className="size-2.5" />{alert.district}</span>
-                        <span className="text-slate-700 ml-auto shrink-0">{timeAgo(alert.date)}</span>
+                        <span className="text-slate-700 ml-auto shrink-0">{formatDemoTimestamp(alert.date)}</span>
                       </div>
                     </motion.div>
                   ))}

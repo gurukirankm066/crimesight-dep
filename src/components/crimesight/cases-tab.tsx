@@ -68,6 +68,8 @@ const ALL_CASES: DisplayCase[] = [
   ...KSP_CASES as any[],
 ]
 
+type DateScope = 'all' | 'today' | 'earlier'
+
 function getRiskColor(score: number) {
   if (score >= 70) return 'high'
   if (score >= 40) return 'medium'
@@ -180,13 +182,14 @@ export default function CasesTab() {
   const [districtFilter, setDistrictFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [priorityFilter, setPriorityFilter] = useState('all')
+  const [dateScope, setDateScope] = useState<DateScope>('all')
   const [page, setPage] = useState(1)
   const debouncedSearch = useDebounce(search, 300)
   const [expandedRow, setExpandedRow] = useState<string | null>(null)
   const [crackCase, setCrackCase] = useState<{ caseId: string; fir: string; crimeType: string; district: string } | null>(null)
   const [reportCaseRowid, setReportCaseRowid] = useState<string | null>(null)
   const {
-    selectedFirId, navigateToDistrict,
+    selectedFirId, selectedCaseDistrict, setSelectedCaseDistrict, navigateToDistrict,
     openDossier, setActiveTab,
     fieldFirReports, fieldFirStorage, hydrateFieldFirReports,
     showFieldFirsOnly, setShowFieldFirsOnly, updateFieldFirStatus,
@@ -195,6 +198,15 @@ export default function CasesTab() {
   useEffect(() => {
     void hydrateFieldFirReports()
   }, [hydrateFieldFirReports])
+
+  // Map drill-downs open the registry with the exact district already applied.
+  useEffect(() => {
+    if (!selectedCaseDistrict) return
+    setDistrictFilter(selectedCaseDistrict)
+    setShowFieldFirsOnly(false)
+    setExpandedRow(null)
+    setSelectedCaseDistrict(null)
+  }, [selectedCaseDistrict, setSelectedCaseDistrict, setShowFieldFirsOnly])
 
   // When navigated from another tab, selectedFirId takes precedence for expansion
   const effectiveExpandedRow = selectedFirId || expandedRow
@@ -212,8 +224,13 @@ export default function CasesTab() {
     if (districtFilter !== 'all') data = data.filter(c => c.district === districtFilter)
     if (statusFilter !== 'all') data = data.filter(c => c.status === statusFilter)
     if (priorityFilter !== 'all') data = data.filter(c => c.priority === priorityFilter)
+    if (dateScope === 'today') data = data.filter(c => isGenerated(c) && c.daysAgo === 0)
+    if (dateScope === 'earlier') data = data.filter(c => !isGenerated(c) || c.daysAgo > 0)
     return data
-  }, [debouncedSearch, districtFilter, statusFilter, priorityFilter])
+  }, [debouncedSearch, districtFilter, statusFilter, priorityFilter, dateScope])
+
+  const todayCaseCount = useMemo(() => ALL_CASES.filter(c => isGenerated(c) && c.daysAgo === 0).length, [])
+  const earlierCaseCount = ALL_CASES.length - todayCaseCount
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
   const paged = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
@@ -231,7 +248,7 @@ export default function CasesTab() {
 
   // Reset page when filters change
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setPage(1) }, [debouncedSearch, districtFilter, statusFilter, priorityFilter])
+  useEffect(() => { setPage(1) }, [debouncedSearch, districtFilter, statusFilter, priorityFilter, dateScope])
 
   return (
     <div>
@@ -311,6 +328,27 @@ export default function CasesTab() {
           </PopoverContent>
         </Popover>
 
+        {/* Synthetic demo-day timeline — keeps new intake separate from historical FIRs. */}
+        <div className="flex h-8 items-center rounded-md border border-white/10 bg-white/[0.03] p-0.5">
+          {([
+            ['all', `All ${ALL_CASES.length.toLocaleString('en-IN')}`],
+            ['today', `Today ${todayCaseCount}`],
+            ['earlier', `Earlier ${earlierCaseCount.toLocaleString('en-IN')}`],
+          ] as const).map(([scope, label]) => (
+            <button
+              key={scope}
+              onClick={() => setDateScope(scope)}
+              className={`h-6 rounded px-2 text-[10px] font-medium transition-colors ${
+                dateScope === scope
+                  ? 'bg-emerald-500/15 text-emerald-300 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         {/* Status filter */}
         <Popover>
           <PopoverTrigger asChild>
@@ -376,13 +414,13 @@ export default function CasesTab() {
         </Popover>
 
         {/* Clear filters */}
-        {(search || districtFilter !== 'all' || statusFilter !== 'all' || priorityFilter !== 'all') && (
+        {(search || districtFilter !== 'all' || statusFilter !== 'all' || priorityFilter !== 'all' || dateScope !== 'all') && (
           <Button
             variant="ghost"
             size="sm"
             className="h-8 text-xs text-slate-400 hover:text-white hover:bg-white/5"
             onClick={() => {
-              setSearch(''); setDistrictFilter('all'); setStatusFilter('all'); setPriorityFilter('all'); setPage(1)
+              setSearch(''); setDistrictFilter('all'); setStatusFilter('all'); setPriorityFilter('all'); setDateScope('all'); setPage(1)
               toast('Filters cleared', { duration: 1500 })
             }}
           >
@@ -560,10 +598,10 @@ export default function CasesTab() {
                         <div className="flex items-center gap-1.5">
                           <span className="font-mono text-xs text-emerald-400">{kase.fir}</span>
                           {'daysAgo' in kase && kase.daysAgo === 0 && (
-                            <span className="inline-flex items-center px-1.5 py-0 rounded text-[8px] font-bold tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 animate-pulse">NEW</span>
+                            <span title="Filed on the synthetic demo day" className="inline-flex items-center px-1.5 py-0 rounded text-[8px] font-bold tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">TODAY</span>
                           )}
                           {'daysAgo' in kase && kase.daysAgo === 1 && (
-                            <span className="inline-flex items-center px-1.5 py-0 rounded text-[8px] font-bold tracking-wider bg-slate-500/10 text-slate-400 border border-slate-500/20">1d</span>
+                            <span title="Filed one day before the synthetic demo day" className="inline-flex items-center px-1.5 py-0 rounded text-[8px] font-bold tracking-wider bg-slate-500/10 text-slate-400 border border-slate-500/20">1d ago</span>
                           )}
                         </div>
                       </td>

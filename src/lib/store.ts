@@ -66,6 +66,11 @@ interface CrimeSightState {
   setSelectedDistrict: (id: string | null) => void
   navigateToDistrict: (id: string) => void
 
+  // District name used when opening the FIR registry from a map drill-down.
+  selectedCaseDistrict: string | null
+  setSelectedCaseDistrict: (name: string | null) => void
+  navigateToDistrictCases: (name: string) => void
+
   selectedSuspectName: string | null
   setSelectedSuspect: (name: string | null) => void
   navigateToSuspect: (name: string) => void
@@ -268,6 +273,10 @@ export const useCrimeSightStore = create<CrimeSightState>()(persist((set, get) =
   selectedDistrict: null,
   setSelectedDistrict: (id) => set({ selectedDistrict: id }),
   navigateToDistrict: (id) => set({ selectedDistrict: id, activeTab: 'map' }),
+
+  selectedCaseDistrict: null,
+  setSelectedCaseDistrict: (name) => set({ selectedCaseDistrict: name }),
+  navigateToDistrictCases: (name) => set({ selectedCaseDistrict: name, activeTab: 'cases' }),
 
   // ── Suspect Selection ──
   selectedSuspectName: null,
