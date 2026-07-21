@@ -4,9 +4,16 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Shield, BarChart3, GitBranch, FileText, Brain, Map,
-  Search, Bell, Mic, ClipboardEdit, Sun, ClipboardCheck
+  Search, Bell, Mic, ClipboardEdit, ClipboardCheck, History, LogOut, UserRound, X
 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { getRecentCases, getTickerItems } from '@/lib/case-generator'
 import CrimeMapTab from '@/components/crimesight/crime-map-tab'
 import DashboardTab from '@/components/crimesight/dashboard-tab'
@@ -79,10 +86,19 @@ function LiveClock() {
   return <>{t}</>
 }
 
+type SessionEvent = {
+  id: string
+  action: 'Signed in' | 'Signed out'
+  detail: string
+  time: string
+}
+
 export default function Home() {
   const { activeTab, setActiveTab: storeSetActiveTab, setTickerItems, tickerItems, selectedFirId, dossierOpen, dossierSuspectName, dossierSourceFir, closeDossier, incrementLivePulse } = useCrimeSightStore()
   const [authenticated, setAuthenticated] = useState(false)
   const [authUser, setAuthUser] = useState('')
+  const [sessionEvents, setSessionEvents] = useState<SessionEvent[]>([])
+  const [showSessionHistory, setShowSessionHistory] = useState(false)
   const [newAlerts, setNewAlerts] = useState(0)
   const [showAlerts, setShowAlerts] = useState(false)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
@@ -95,6 +111,25 @@ export default function Home() {
   const [showJudgeDemo, setShowJudgeDemo] = useState(false)
   const [showCaseCommand, setShowCaseCommand] = useState(false)
   const prevTabRef = useRef(activeTab)
+
+  const recordSessionEvent = useCallback((action: SessionEvent['action'], detail: string) => {
+    const time = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+    setSessionEvents(previous => [{ id: `${Date.now()}-${action}`, action, detail, time }, ...previous].slice(0, 10))
+  }, [])
+
+  const handleDemoAuthenticated = useCallback((user: string) => {
+    setAuthUser(user)
+    setAuthenticated(true)
+    recordSessionEvent('Signed in', `${user} entered the prototype workspace`)
+  }, [recordSessionEvent])
+
+  const handleDemoLogout = useCallback(() => {
+    recordSessionEvent('Signed out', `${authUser || 'Demo user'} ended the prototype session`)
+    setShowSessionHistory(false)
+    setAuthenticated(false)
+    setAuthUser('')
+    toast.success('Demo session closed')
+  }, [authUser, recordSessionEvent])
 
   // ⌘K shortcut
   useEffect(() => {
@@ -191,7 +226,7 @@ export default function Home() {
 
   // Login gate
   if (!authenticated) {
-    return <LoginScreen onAuthenticated={(user) => { setAuthUser(user); setAuthenticated(true) }} />
+    return <LoginScreen onAuthenticated={handleDemoAuthenticated} />
   }
 
   return (
@@ -322,13 +357,72 @@ export default function Home() {
                 <span className="text-[10px] font-mono tabular-nums text-slate-500"><LiveClock /></span>
               </div>
               {authUser && (
-                <Badge className="h-5 px-1.5 text-[9px] font-bold tracking-wider text-emerald-400/80 border-emerald-500/15 bg-emerald-500/5">
-                  {authUser}
-                </Badge>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className="flex h-6 items-center gap-1.5 rounded-md border border-emerald-500/15 bg-emerald-500/5 px-1.5 text-[9px] font-bold tracking-wider text-emerald-400/80 transition-colors hover:bg-emerald-500/10 focus:outline-none focus:ring-1 focus:ring-emerald-400/60"
+                      aria-label="Open demo session menu"
+                    >
+                      <UserRound className="size-3" />
+                      <span>{authUser}</span>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-60 border-white/10 bg-[#0d1623] p-1.5 text-slate-200 shadow-xl shadow-black/40">
+                    <DropdownMenuLabel className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                      Demo session · {authUser}
+                    </DropdownMenuLabel>
+                    <p className="px-2 pb-2 text-[10px] leading-relaxed text-slate-500">Visual demonstration access only — not real authentication.</p>
+                    <DropdownMenuSeparator className="bg-white/[0.07]" />
+                    <DropdownMenuItem onSelect={() => setShowSessionHistory(true)} className="cursor-pointer text-xs text-slate-200 focus:bg-white/[0.07] focus:text-white">
+                      <History className="size-3.5 text-emerald-400" />
+                      Session history
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={handleDemoLogout} className="cursor-pointer text-xs text-red-300 focus:bg-red-500/10 focus:text-red-200">
+                      <LogOut className="size-3.5 text-red-400" />
+                      End demo session
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
           </div>
         </header>
+
+        <AnimatePresence>
+          {showSessionHistory && (
+            <motion.aside
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 16 }}
+              transition={{ duration: 0.18 }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Demo session history"
+              className="fixed right-3 top-14 z-50 w-[min(22rem,calc(100vw-1.5rem))] rounded-xl border border-white/[0.1] bg-[#0b1320]/98 p-4 shadow-2xl shadow-black/50 backdrop-blur-xl"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="flex items-center gap-2 text-sm font-bold text-white"><History className="size-4 text-emerald-400" /> Session history</p>
+                  <p className="mt-1 text-[10px] text-slate-500">Recorded in this browser tab only.</p>
+                </div>
+                <button onClick={() => setShowSessionHistory(false)} className="rounded-md p-1 text-slate-500 transition-colors hover:bg-white/[0.06] hover:text-white" aria-label="Close session history">
+                  <X className="size-4" />
+                </button>
+              </div>
+              <div className="mt-4 space-y-2">
+                {sessionEvents.map(event => (
+                  <div key={event.id} className="flex gap-2.5 rounded-lg border border-white/[0.06] bg-white/[0.025] px-3 py-2.5">
+                    <span className={`mt-1.5 size-1.5 shrink-0 rounded-full ${event.action === 'Signed in' ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2"><span className="text-[11px] font-semibold text-slate-200">{event.action}</span><span className="font-mono text-[9px] text-slate-500">{event.time}</span></div>
+                      <p className="mt-0.5 text-[10px] leading-relaxed text-slate-500">{event.detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.aside>
+          )}
+        </AnimatePresence>
 
         {/* ═══ LIVE FIR TICKER — Scrolling ═══ */}
         {tickerItems.length > 0 && (
