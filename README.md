@@ -70,6 +70,10 @@ The login screen is a visual demonstration gate only — it is **not** real auth
 | Ontology readiness | Palantir Foundry `FIR Case` model linked to Person, Officer, Location, and Evidence objects |
 | AI safety | Allow-listed FIR filters and verified deterministic query execution |
 
+## Prototype scope
+
+This KSP Datathon submission is a complete working prototype that demonstrates the core officer workflow end-to-end using reproducible synthetic FIR data. A production rollout would connect authorised live data sources only after security review, role-based access controls, governance approval, and department-led operational validation.
+
 ## Query Copilot safety model
 
 CrimeSight’s conversational layer is deliberately constrained:
