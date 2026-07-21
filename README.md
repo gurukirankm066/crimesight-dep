@@ -1,70 +1,132 @@
 # CrimeSight AI
 
-> Verified conversational FIR intelligence for Karnataka State Police — a reproducible synthetic prototype for KSP Datathon 2026.
+> Evidence-backed FIR intelligence for Karnataka State Police — a reproducible synthetic prototype built by **Team Quantara** for **KSP Datathon 2026**.
 
-**Live prototype:** https://crimesight-dep-onmoxbpk.onslate.in/
+[![Live prototype](https://img.shields.io/badge/Live%20prototype-Zoho%20Catalyst-00a578?style=for-the-badge)](https://crimesight-dep-onmoxbpk.onslate.in/)
 
-## The problem
+**Team lead:** Gurukiran KM<br>
+**Live deployment:** [crimesight-dep-onmoxbpk.onslate.in](https://crimesight-dep-onmoxbpk.onslate.in/)
 
-Crime data is difficult to navigate quickly across FIRs, districts, crime types, operational status, and linked entities. A generic AI chatbot can sound convincing without showing the data that supports its answer.
+## Problem addressed
 
-CrimeSight makes natural-language crime intelligence **verifiable before action**. It supports officer review; it never makes enforcement decisions.
+Police teams need to move quickly between FIRs, districts, offence types, case status, risk signals, and related entities. Conventional dashboards make this navigation slow, while generic AI can give an answer without showing the evidence behind it.
 
-## Core capability: Query Copilot
+CrimeSight AI makes FIR intelligence **verifiable before action**. It supports officers with transparent, evidence-backed review workflows; it never makes enforcement decisions.
 
-Ask a question such as:
+> **Data boundary:** All records in this prototype are deterministic synthetic FIR data, modelled on the supplied KSP ER schema. This prototype is not connected to live operational police data.
 
-> Show high-risk cybercrime FIRs in Mysuru.
+## Working prototype
 
-CrimeSight compiles it into an allow-listed query against the reproducible FIR dataset and returns:
+### Demo access
 
-- matching FIR count and highest-risk records;
-- visible district, crime, status, priority, and time filters;
-- a query ID and source coverage;
-- a clear synthetic-data boundary;
-- a safe clarification instead of guessing when the request is ambiguous.
+The login screen is a visual demonstration gate only — it is **not** real authentication.
 
-No user-provided SQL is generated or executed.
+| Field | Value |
+| --- | --- |
+| Officer ID / Username | `admin` |
+| Access code | `admin` |
 
-## Proof Before Action
+### Core workflow
 
-Each Query Copilot response exposes the evidence behind the answer. The included **Judge Demo Mode** demonstrates the full accountability flow:
+1. Open **Geo Intel** to see district-level crime volume, risk, and offence signals.
+2. Open **FIR Registry** to search, filter, and expand a reproducible FIR record.
+3. Inspect **Network** to understand linked case context across people, officers, locations, and evidence.
+4. Ask **CrimeSight AI** a verified FIR question, for example: `Show high-risk cybercrime FIRs in Mysuru`.
+5. Inspect the **Proof Before Action** receipt: visible filters, matching records, query ID, and source coverage.
+6. Open **Actions** to approve a review, request evidence, or defer — all while keeping a visible audit trail.
 
-1. verified query result;
-2. challenge of an ambiguous interpretation;
-3. connected FIR context;
-4. human review decision and audit trail;
-5. field FIR to governed-action readiness.
+## Key features
 
-## Technology and integrations
+| Feature | What it does |
+| --- | --- |
+| **Geo Intel** | District crime choropleth with FIR volume, active investigations, high-priority signals, and offence classification. |
+| **FIR Registry** | Search and filter 10,000+ reproducible FIR records by FIR number, crime type, district, status, and priority. |
+| **Connected Network** | Brings FIR context together across related people, officers, locations, and evidence. |
+| **Verified Query Copilot** | Converts supported natural-language FIR questions into allow-listed filters; it does not generate or run unrestricted SQL. |
+| **Proof Before Action** | Displays matching records, query ID, applied filters, source coverage, and the synthetic-data boundary before review. |
+| **Governed Actions** | Lets a human officer approve review, request evidence, or defer, with an auditable decision history. |
+| **Judge Story** | A guided end-to-end demonstration from verified signal to accountable human action. |
+| **Field FIR intake** | Demonstrates field-report capture and Catalyst-backed persistence readiness. |
+
+## Product screens
+
+| Geo intelligence | FIR registry |
+| --- | --- |
+| ![Geo Intelligence dashboard](public/screenshot-crime-map.png) | ![FIR Registry](public/demo-cases.png) |
+
+| Verified AI query | Connected investigation context |
+| --- | --- |
+| ![CrimeSight AI proof response](public/demo-ai.png) | ![Network view](public/screenshot-network-redesigned.png) |
+
+## Technology stack
 
 | Capability | Implementation |
 | --- | --- |
-| Web interface | Next.js, TypeScript, Tailwind CSS, Zoho Catalyst Slate |
-| Reproducible data | 10,000 deterministic synthetic FIR records modeled on the supplied KSP ER schema |
-| Field FIR intake | Catalyst Advanced I/O function, Data Store persistence, Stratus-ready evidence flow |
-| Governed operational actions | Catalyst-backed review action path with safe local fallback |
-| Ontology readiness | Palantir Foundry FIR Case object type and linked Person, Officer, Location, and Evidence objects |
-| Query safety | Allow-listed FIR filters and verified in-memory dataset execution |
+| Web application | Next.js, TypeScript, React, Tailwind CSS |
+| Deployment | **Zoho Catalyst Slate** |
+| Backend workflow readiness | Catalyst Functions / Advanced I/O, Data Store, Stratus-ready evidence flow |
+| Reproducible data | 10,000+ deterministic synthetic FIR records modelled on the supplied KSP ER schema |
+| Governed review | Catalyst-backed review path with a safe local synthetic fallback for reliable demonstrations |
+| Ontology readiness | Palantir Foundry `FIR Case` model linked to Person, Officer, Location, and Evidence objects |
+| AI safety | Allow-listed FIR filters and verified deterministic query execution |
+
+## Query Copilot safety model
+
+CrimeSight’s conversational layer is deliberately constrained:
+
+- It accepts FIR and crime-intelligence questions within the demonstrated scope.
+- It translates supported questions into allow-listed district, crime, priority, status, repeat-pattern, and time filters.
+- It returns a query ID, applied filters, result count, highest-risk matching FIRs, and a data-boundary notice.
+- It asks for clarification when a question is ambiguous or out of scope.
+- It never creates unrestricted SQL, fabricates records, exposes real operational data, or performs automated enforcement.
+
+Read the full [architecture](docs/ARCHITECTURE.md) and [Judge Story walkthrough](docs/JUDGE_DEMO.md).
 
 ## Run locally
 
+### Prerequisites
+
+- Node.js 22 or later
+- npm
+
+### Setup
+
 ```bash
+git clone https://github.com/gurukirankm066/crimesight-dep.git
+cd crimesight-dep
+cp .env.example .env
 npm install
+npm run setup
 npm run dev
 ```
 
-Open http://localhost:3000.
+Open [http://localhost:3000](http://localhost:3000), then use `admin` / `admin` for the demonstration gate.
 
-Use `npm run build` for a production build.
+### Validate a production build
 
-## Demo
+```bash
+npm run build
+```
 
-Use the header **Demo Mode** button. A complete 3-minute script is in [docs/JUDGE_DEMO.md](docs/JUDGE_DEMO.md). The architecture is documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+## Optional integrations
 
-## Safety and data boundary
+- **Zoho QuickML** provides optional normal conversation through a private Catalyst Function; verified FIR questions remain deterministic and evidence-backed. See [QuickML setup](docs/QUICKML_SETUP.md).
+- **Palantir Foundry** provides ontology readiness for linked FIR case context. Public demo availability does not depend on external connector uptime; it safely falls back to synthetic data.
 
-- All displayed case data is synthetic and reproducible.
-- The prototype is not connected to live operational police data.
-- CrimeSight recommends review actions only; a human officer approves, requests evidence, or defers.
-- No personally identifying data, automated enforcement, or unrestricted model-generated SQL is used in the demo.
+## Demo video
+
+**Final walkthrough video:** _Add the public Google Drive or unlisted YouTube URL here before submission._
+
+The video should demonstrate, in order: Geo Intel → FIR Registry → Network → verified AI query and proof → human review and audit trail.
+
+## Safety and responsible use
+
+- Synthetic, reproducible prototype data only.
+- No live police records or personally identifying data.
+- No automated enforcement or automated adverse decisions.
+- Human officers remain accountable for every review decision.
+- Connector and data-source status is visible in the application.
+
+---
+
+Built by **Team Quantara** · **KSP Datathon 2026** · [Open the live prototype](https://crimesight-dep-onmoxbpk.onslate.in/)
