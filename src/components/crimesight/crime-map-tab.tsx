@@ -151,6 +151,8 @@ const COMPACT_DISTRICT_LABELS: Record<string, string> = {
   'Bengaluru Urban': 'Bengaluru U.',
   'Bengaluru Rural': 'Bengaluru R.',
   'Chikkamagaluru': 'Chikkamagaluru',
+  'Chamarajanagar': 'Chamarajanagar',
+  'Chikkaballapur': 'Chikkaballapur',
   'Dakshina Kannada': 'D. Kannada',
   'Uttara Kannada': 'U. Kannada',
 }
@@ -528,7 +530,10 @@ export default function CrimeMapTab() {
                 const centroid = geoCentroid(feature)
                 const [cx, cy] = projection(centroid) ?? [0, 0]
                 const labelOffset = DISTRICT_LABEL_OFFSETS[dbName] ?? { x: 0, y: 0 }
-                const showLabel = svgDimensions.width >= 880 || isSelected || isHovered
+                // Keep district names on normal phone/tablet widths, but reserve
+                // FIR counts for larger maps so dense areas stay legible.
+                const showLabel = svgDimensions.width >= 620 || isSelected || isHovered
+                const showCaseCount = svgDimensions.width >= 880 || isSelected || isHovered
                 const label = svgDimensions.width < 1040 ? (COMPACT_DISTRICT_LABELS[dbName] ?? dbName) : dbName
                 return (
                   <g key={`${geoName}-${i}`}>
@@ -543,9 +548,9 @@ export default function CrimeMapTab() {
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleDistrictClick(geoName, feature) } }}
                     />
                     {showLabel && <text x={cx + labelOffset.x} y={cy + labelOffset.y} textAnchor="middle" dominantBaseline="central" className="pointer-events-none select-none"
-                      fill={isDimmed ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)'} fontSize={drillDown && isDimmed ? 7 : 8} fontWeight={isSelected ? 700 : 500}
+                      fill={isDimmed ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)'} fontSize={svgDimensions.width < 880 ? 6.5 : drillDown && isDimmed ? 7 : 8} fontWeight={isSelected ? 700 : 500}
                       style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>{label}</text>}
-                    {cases > 0 && !isDimmed && showLabel && (
+                    {cases > 0 && !isDimmed && showLabel && showCaseCount && (
                       <text x={cx + labelOffset.x} y={cy + labelOffset.y + 12} textAnchor="middle" dominantBaseline="central" className="pointer-events-none select-none"
                         fill="rgba(255,255,255,0.5)" fontSize={7} fontWeight={600}>{cases}</text>
                     )}
