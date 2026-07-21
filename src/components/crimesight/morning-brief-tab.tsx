@@ -12,6 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { getOvernightCases, getGeneratedStats, getRecentCases, getGeneratedDistrictStats, getGeneratedCrimeTypeStats } from '@/lib/case-generator'
+import { useCrimeSightStore } from '@/lib/store'
 import LastSynced from '@/components/crimesight/last-synced'
 
 /* ═══════════════════════════════════════════════════════════════
@@ -203,6 +204,7 @@ const THREAT_STYLES: Record<string, { bg: string; text: string; border: string; 
 
 export default function MorningBriefTab() {
   const [showSuspects, setShowSuspects] = useState(false)
+  const { navigateToFir } = useCrimeSightStore()
 
   const data = useMemo<BriefingData>(() => {
     const overnightCases = getOvernightCases()
@@ -548,7 +550,13 @@ export default function MorningBriefTab() {
             {criticalAlerts.map(a => {
               const style = alertPrioStyle(a.priority)
               return (
-                <div key={a.id} className={`px-4 py-2.5 border-l-2 ${style.border} hover:bg-white/[0.01] transition-colors`}>
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => navigateToFir(a.id)}
+                  className={`block w-full px-4 py-2.5 border-l-2 text-left ${style.border} hover:bg-emerald-500/[0.06] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400/70 transition-colors`}
+                  aria-label={`Open FIR ${a.fir}`}
+                >
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[10px] font-mono text-slate-400">{a.fir}</span>
                     <Badge className={`h-4 px-1.5 text-[8px] font-bold border ${style.badge}`}>{style.label}</Badge>
@@ -559,7 +567,7 @@ export default function MorningBriefTab() {
                     <span className="truncate">{a.district} · {a.crimeType}</span>
                     <span className="ml-auto text-[9px] text-slate-600 shrink-0">{a.date}</span>
                   </div>
-                </div>
+                </button>
               )
             })}
             {criticalAlerts.length === 0 && (

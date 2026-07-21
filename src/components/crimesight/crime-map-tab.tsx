@@ -223,23 +223,6 @@ export default function CrimeMapTab() {
     navigateToDistrictCases,
   } = useCrimeSightStore()
 
-  // Respond to cross-tab district navigation
-  useEffect(() => {
-    if (storeSelectedDistrict && mapStats.length > 0) {
-      const districtName = getDemoDistrictName(storeSelectedDistrict)
-      // Find the matching GeoJSON name
-      const geoName = Object.entries(GEOJSON_TO_DB).find(([_, db]) => db === districtName)?.[0] || districtName
-      const match = mapStats.find(d => d.name === geoName || d.name === districtName)
-      if (match) {
-        setSelectedDistrict(match)
-        setDrillDown(null)
-        setDrillLoading(false)
-        setSelectedFeature(null)
-      }
-      storeSetSelectedDistrict(null)
-    }
-  }, [storeSelectedDistrict, mapStats, storeSetSelectedDistrict])
-
   /* ─── Lookup: DB name -> DistrictData ─── */
   const districtDataMap = useMemo(() => {
     const map: Record<string, DistrictData> = {}
@@ -403,6 +386,20 @@ export default function CrimeMapTab() {
       })
     } catch { setDrillDown(null) } finally { setDrillLoading(false) }
   }, [districtDataMap])
+
+  // Cross-tab links must use the same drill-down pathway as a direct map click.
+  // This keeps "View District" focused on that district instead of merely
+  // highlighting it on the statewide map.
+  useEffect(() => {
+    if (!storeSelectedDistrict || mapStats.length === 0) return
+    const districtName = getDemoDistrictName(storeSelectedDistrict)
+    const geoName = Object.entries(GEOJSON_TO_DB).find(([, db]) => db === districtName)?.[0] || districtName
+    const feature = karnatakaGeojson.features.find(
+      item => (item.properties as GeoJsonProperties)?.NAME_2 === geoName,
+    )
+    storeSetSelectedDistrict(null)
+    if (feature) void handleDistrictClick(geoName, feature)
+  }, [storeSelectedDistrict, mapStats.length, storeSetSelectedDistrict, handleDistrictClick])
 
   const handleBackToMap = useCallback(() => {
     setDrillDown(null); setSelectedFeature(null); setActiveCluster(null)
