@@ -1145,7 +1145,6 @@ function NetworkGraphPanel() {
     if (networkSearchQuery) {
       const q = networkSearchQuery
       setNetworkSearchQuery('')
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearchQuery(q)
       setTimeout(() => searchInputRef.current?.focus(), 300)
     }
@@ -1156,7 +1155,6 @@ function NetworkGraphPanel() {
     if (selectedSuspectName) {
       const q = selectedSuspectName
       setSelectedSuspect(null)
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearchQuery(q)
       setTimeout(() => searchInputRef.current?.focus(), 300)
     }
@@ -1167,7 +1165,6 @@ function NetworkGraphPanel() {
   useEffect(() => {
     if (activeNarrativeArc) {
       // Sync store narrative arc to local filter
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveArcFilter(activeNarrativeArc)
     }
   }, [activeNarrativeArc])
@@ -1317,7 +1314,6 @@ function NetworkGraphPanel() {
     setSearchQuery(q)
   }, [])
 
-  /* eslint-disable react-hooks/set-state-in-effect -- reacting to debounced search to derive dropdown results */
   useEffect(() => {
     if (debouncedSearchQuery.length < 2) { setSearchResults([]); setShowSearchDropdown(false); return }
     const lq = debouncedSearchQuery.toLowerCase()
@@ -1331,7 +1327,6 @@ function NetworkGraphPanel() {
     setSearchResults(results)
     setShowSearchDropdown(results.length > 0)
   }, [debouncedSearchQuery, nodes])
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const flyToNode = useCallback((node: GraphNode) => {
     if (!node.x || !node.y) return

@@ -247,7 +247,6 @@ export default function CasesTab() {
   const uniquePriorities = ['Critical', 'High', 'Medium', 'Low']
 
   // Reset page when filters change
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setPage(1) }, [debouncedSearch, districtFilter, statusFilter, priorityFilter, dateScope])
 
   return (
