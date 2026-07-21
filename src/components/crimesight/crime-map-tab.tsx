@@ -517,7 +517,9 @@ export default function CrimeMapTab() {
                 const data = districtDataMap[dbName]
                 const cases = data?.totalCases ?? 0
                 const isHovered = hoveredDistrict === geoName
-                const isSelected = selectedDistrict?.name === dbName
+                // The dashboard may have a default district in its side panel. Only
+                // visually select a map district after the user has opened its drill-down.
+                const isSelected = Boolean(drillDown && selectedDistrict?.name === dbName)
                 const isDimmed = drillDown && selectedFeature && !isSelected
                 const topCrime = data?.byType ? Object.entries(data.byType).sort(([, a], [, b]) => b - a)[0]?.[0] ?? '—' : '—'
                 const fill = isDimmed ? 'rgba(17,17,24,0.85)' : isHovered ? getCaseColorHover(cases, p33, p66) : getCaseColor(cases, p33, p66)
