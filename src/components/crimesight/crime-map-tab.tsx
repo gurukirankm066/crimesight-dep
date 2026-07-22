@@ -133,19 +133,8 @@ const GEOJSON_TO_DB: Record<string, string> = {
 
 /* A few compact districts sit close together. These offsets keep desktop labels
    readable while the map hides non-selected labels on narrow screens. */
-const DISTRICT_LABEL_OFFSETS: Record<string, { x: number; y: number }> = {
-  'Vijayanagara': { x: 0, y: -8 },
-  'Davanagere': { x: -15, y: 15 },
-  'Gadag': { x: -13, y: 8 },
-  'Haveri': { x: -15, y: 2 },
-  'Bengaluru Urban': { x: 17, y: 14 },
-  'Bengaluru Rural': { x: 22, y: -9 },
-  'Ramanagara': { x: -10, y: 18 },
-  'Chikkaballapur': { x: 16, y: -2 },
-  'Kolar': { x: 13, y: 12 },
-  'Mandya': { x: -10, y: -8 },
-  'Chamarajanagar': { x: 9, y: 13 },
-}
+/* Label positioning is now calculated dynamically from polygon centroids.
+  No hardcoded offsets needed. Labels are auto-sized based on polygon area. */
 
 const COMPACT_DISTRICT_LABELS: Record<string, string> = {
   'Bengaluru Urban': 'Bengaluru U.',
@@ -190,6 +179,45 @@ function formatDemoTimestamp(dateStr: string): string {
   const date = new Date(dateStr.replace(' ', 'T'))
   if (Number.isNaN(date.getTime())) return dateStr
   return new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }).format(date)
+}
+
+/* ─── Dynamic Label Sizing ─── */
+function calculatePolygonBounds(feature: Feature): { minLng: number; maxLng: number; minLat: number; maxLat: number } | null {
+  if (!feature.geometry || feature.geometry.type === 'Point') return null
+  let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity
+   
+  const processCoords = (coords: any): void => {
+     if (typeof coords[0] === 'number') {
+        // [lng, lat]
+        const [lng, lat] = coords
+        minLng = Math.min(minLng, lng)
+        maxLng = Math.max(maxLng, lng)
+        minLat = Math.min(minLat, lat)
+        maxLat = Math.max(maxLat, lat)
+     } else {
+        coords.forEach(processCoords)
+     }
+  }
+   
+  const coords = (feature.geometry as any).coordinates
+  processCoords(coords)
+   
+  if (!isFinite(minLng)) return null
+  return { minLng, maxLng, minLat, maxLat }
+}
+
+function calculateDynamicFontSize(bounds: { minLng: number; maxLng: number; minLat: number; maxLat: number } | null, baseSize: number): number {
+  if (!bounds) return baseSize
+  // Calculate approximate area in degrees
+  const width = bounds.maxLng - bounds.minLng
+  const height = bounds.maxLat - bounds.minLat
+  const area = width * height
+   
+  // Scale font size based on area: very small districts get smaller font
+  if (area < 0.1) return Math.max(5, baseSize - 2)  // Very small
+  if (area < 0.25) return Math.max(5.5, baseSize - 1)  // Small
+  if (area > 2.0) return Math.min(baseSize + 1, 10)  // Large
+  return baseSize
 }
 
 /* ─── Component ─── */
@@ -324,14 +352,28 @@ export default function CrimeMapTab() {
   const handleDistrictClick = useCallback(async (geoName: string, feature: Feature) => {
     const dbName = GEOJSON_TO_DB[geoName] || geoName
     const data = districtDataMap[dbName]
+    
+    // Set selected district immediately
     setSelectedDistrict(data ?? { id: geoName, name: dbName, totalCases: 0, activeCases: 0, criticalCases: 0, byType: {}, latitude: '', longitude: '' })
     setSelectedFeature(feature)
     setActiveCluster(null)
     setDrillLoading(true)
+    
     try {
-      // Use local 10K data instead of missing API
+      // Fetch cases specifically for this district
       const districtCases = getCasesByDistrict(dbName)
-      if (districtCases.length === 0) { setDrillDown(null); return }
+      
+      if (districtCases.length === 0) {
+        // District exists but has no cases yet - show empty state
+        setDrillDown({
+          district: dbName,
+          totalCases: 0,
+          cases: [],
+          policeStations: [],
+          locationClusters: [],
+        })
+        return
+      }
 
       // Build location clusters from cases (group by area name)
       const areaMap: Record<string, CaseLocation[]> = {}
@@ -377,6 +419,7 @@ export default function CrimeMapTab() {
         crimeType: c.crimeType, priority: c.priority, status: c.status, date: c.occurrenceDate,
       }))
 
+      // Set drill-down with ONLY the selected district's data
       setDrillDown({
         district: dbName,
         totalCases: districtCases.length,
@@ -384,7 +427,18 @@ export default function CrimeMapTab() {
         policeStations,
         locationClusters,
       })
-    } catch { setDrillDown(null) } finally { setDrillLoading(false) }
+    } catch (error) {
+      // Error fetching data - show empty state
+      setDrillDown({
+        district: dbName,
+        totalCases: 0,
+        cases: [],
+        policeStations: [],
+        locationClusters: [],
+      })
+    } finally {
+      setDrillLoading(false)
+    }
   }, [districtDataMap])
 
   // Cross-tab links must use the same drill-down pathway as a direct map click.
@@ -533,7 +587,6 @@ export default function CrimeMapTab() {
                 const strokeWidth = isSelected ? 2.5 : isHovered ? 1.5 : drillDown && !isDimmed ? 1 : 0.5
                 const centroid = geoCentroid(feature)
                 const [cx, cy] = projection(centroid) ?? [0, 0]
-                const labelOffset = DISTRICT_LABEL_OFFSETS[dbName] ?? { x: 0, y: 0 }
                 // Keep district names on normal phone/tablet widths, but reserve
                 // FIR counts for larger maps so dense areas stay legible.
                 // Names are part of the map's primary information, not a
@@ -542,6 +595,13 @@ export default function CrimeMapTab() {
                 const showLabel = !drillDown || isSelected || isHovered
                 const showCaseCount = svgDimensions.width >= 880 || isSelected || isHovered
                 const label = svgDimensions.width < 1040 ? (COMPACT_DISTRICT_LABELS[dbName] ?? dbName) : dbName
+                
+                // Calculate dynamic font size based on polygon area
+                const bounds = calculatePolygonBounds(feature)
+                let baseFontSize = svgDimensions.width < 880 ? 6.5 : drillDown && isDimmed ? 7 : 8
+                const dynamicFontSize = calculateDynamicFontSize(bounds, baseFontSize)
+                const caseFontSize = Math.max(6, dynamicFontSize - 1)
+                
                 return (
                   <g key={`${geoName}-${i}`}>
                     <path d={pathGenerator(feature) || ''} fill={fill} stroke={strokeColor} strokeWidth={strokeWidth} className="cursor-pointer transition-all duration-150"
@@ -554,12 +614,46 @@ export default function CrimeMapTab() {
                       onClick={() => !drillDown && handleDistrictClick(geoName, feature)}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleDistrictClick(geoName, feature) } }}
                     />
-                    {showLabel && <text x={cx + labelOffset.x} y={cy + labelOffset.y} textAnchor="middle" dominantBaseline="central" className="pointer-events-none select-none"
-                      fill={isDimmed ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)'} fontSize={svgDimensions.width < 880 ? 6.5 : drillDown && isDimmed ? 7 : 8} fontWeight={isSelected ? 700 : 500}
-                      style={{ paintOrder: 'stroke', stroke: 'rgba(3,7,18,0.85)', strokeWidth: 2, strokeLinejoin: 'round' }}>{label}</text>}
+                    {showLabel && (
+                      <text 
+                        x={cx} 
+                        y={cy} 
+                        textAnchor="middle" 
+                        dominantBaseline="central" 
+                        className="pointer-events-none select-none"
+                        fill={isDimmed ? 'rgba(255,255,255,0.15)' : 'white'}
+                        fontSize={dynamicFontSize}
+                        fontWeight={isSelected ? 700 : 600}
+                        style={{ 
+                          paintOrder: 'stroke',
+                          stroke: 'rgba(0,0,0,0.6)',
+                          strokeWidth: 1.2,
+                          strokeLinejoin: 'round',
+                          textRendering: 'geometricPrecision'
+                        }}
+                      >
+                        {label}
+                      </text>
+                    )}
                     {cases > 0 && !isDimmed && showLabel && showCaseCount && (
-                      <text x={cx + labelOffset.x} y={cy + labelOffset.y + 12} textAnchor="middle" dominantBaseline="central" className="pointer-events-none select-none"
-                        fill="rgba(255,255,255,0.5)" fontSize={7} fontWeight={600}>{cases}</text>
+                      <text 
+                        x={cx} 
+                        y={cy + dynamicFontSize + 2} 
+                        textAnchor="middle" 
+                        dominantBaseline="central" 
+                        className="pointer-events-none select-none"
+                        fill="rgba(255,255,255,0.6)" 
+                        fontSize={caseFontSize} 
+                        fontWeight={600}
+                        style={{
+                          paintOrder: 'stroke',
+                          stroke: 'rgba(0,0,0,0.5)',
+                          strokeWidth: 0.8,
+                          strokeLinejoin: 'round'
+                        }}
+                      >
+                        {cases}
+                      </text>
                     )}
                   </g>
                 )
