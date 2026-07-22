@@ -598,7 +598,7 @@ export default function CrimeMapTab() {
                 
                 // Calculate dynamic font size based on polygon area
                 const bounds = calculatePolygonBounds(feature)
-                let baseFontSize = svgDimensions.width < 880 ? 6.5 : drillDown && isDimmed ? 7 : 8
+                const baseFontSize = svgDimensions.width < 880 ? 6.5 : drillDown && isDimmed ? 7 : 8
                 const dynamicFontSize = calculateDynamicFontSize(bounds, baseFontSize)
                 const caseFontSize = Math.max(6, dynamicFontSize - 1)
                 
