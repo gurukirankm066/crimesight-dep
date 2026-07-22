@@ -267,12 +267,13 @@ export const useCrimeSightStore = create<CrimeSightState>()(persist((set, get) =
   // ── FIR Selection ──
   selectedFirId: null,
   setSelectedFir: (id) => set({ selectedFirId: id }),
-  navigateToFir: (id) => set({ selectedFirId: id, activeTab: 'cases' }),
+  // A direct FIR link must never inherit a previous operation filter.
+  navigateToFir: (id) => set({ selectedFirId: id, activeNarrativeArc: null, activeTab: 'cases' }),
 
   // ── District Selection ──
   selectedDistrict: null,
   setSelectedDistrict: (id) => set({ selectedDistrict: id }),
-  navigateToDistrict: (id) => set({ selectedDistrict: id, activeTab: 'map' }),
+  navigateToDistrict: (id) => set({ selectedDistrict: id, activeNarrativeArc: null, activeTab: 'map' }),
 
   selectedCaseDistrict: null,
   setSelectedCaseDistrict: (name) => set({ selectedCaseDistrict: name }),

@@ -27,6 +27,7 @@ import {
   getRepeatOffendersForCase, getLinkedCases, getCaseIntelligenceBrief,
 } from '@/lib/ksp-data'
 import { GENERATED_CASES, getGeneratedDistrictStats, type GeneratedCase } from '@/lib/case-generator'
+import { DEMO_CASES, DEMO_CRIME_TYPES, DEMO_DISTRICTS, DEMO_NARRATIVE_ARCS } from '@/lib/demo-data'
 import CaseCrackerModal from '@/components/crimesight/case-cracker-modal'
 import AiReportModal from '@/components/crimesight/ai-report-modal'
 import { useCrimeSightStore, type FieldFirReport } from '@/lib/store'
@@ -67,6 +68,33 @@ const ALL_CASES: DisplayCase[] = [
   ...GENERATED_CASES,
   ...KSP_CASES as any[],
 ]
+
+// The operations dashboard uses a curated set of 17 narrative FIRs. Convert
+// those records once so "View FIRs" can show the exact operation scope in the
+// same registry rather than falling back to every synthetic case.
+const NARRATIVE_CASES: GeneratedCase[] = DEMO_CASES.map((kase) => ({
+  rowid: kase.ROWID,
+  fir: kase.fir_number,
+  crimeType: DEMO_CRIME_TYPES.find((type) => type.ROWID === kase.crime_type_rowid)?.crime_type_name ?? 'Other',
+  crimeCategory: 'Narrative investigation',
+  district: DEMO_DISTRICTS.find((district) => district.ROWID === kase.district_rowid)?.district_name ?? 'Karnataka',
+  districtRowid: kase.district_rowid,
+  priority: kase.case_priority,
+  status: kase.case_status,
+  latitude: Number(kase.latitude),
+  longitude: Number(kase.longitude),
+  place: kase.place_of_occurrence,
+  complaintMode: kase.complaint_mode,
+  occurrenceDate: kase.occurrence_datetime,
+  complaintDate: kase.complaint_datetime,
+  riskScore: kase.ai_risk_score,
+  isSensitive: kase.is_sensitive,
+  officerRowid: '',
+  suspects: [], vehicles: [], evidence: [], arrests: [], witnesses: [], similarCases: [], forensicMatches: [],
+  hasRepeatOffender: false,
+  suspectCount: 0, evidenceCount: 0, vehicleCount: 0,
+  daysAgo: 999,
+}))
 
 type DateScope = 'all' | 'today' | 'earlier'
 
@@ -177,6 +205,27 @@ function GeneratedFirDetail({
   )
 }
 
+function KspFirQuickDetail({ kase, onCaseCracker, onViewDistrict }: { kase: KSPCase; onCaseCracker: () => void; onViewDistrict: () => void }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="bg-white/[0.02] p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div><p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400">FIR case summary</p><p className="mt-1 text-[10px] text-slate-500">Synthetic prototype record — use for demonstration and review only.</p></div>
+        <Badge variant="outline" className={`shrink-0 px-1.5 text-[9px] ${PRIORITY_STYLES[kase.priority] || ''}`}>{kase.priority} priority</Badge>
+      </div>
+      <div className="grid grid-cols-1 gap-4 text-xs sm:grid-cols-2 lg:grid-cols-4">
+        <div><p className="mb-1 text-slate-500">FIR Number</p><p className="font-mono text-emerald-400">{kase.fir}</p></div>
+        <div><p className="mb-1 text-slate-500">Crime classification</p><p className="text-slate-300">{kase.crimeType}</p><p className="mt-0.5 text-[10px] text-slate-600">{kase.crimeCategory}</p></div>
+        <div><p className="mb-1 text-slate-500">Place of occurrence</p><p className="text-slate-300">{kase.place}</p><p className="mt-0.5 text-[10px] text-slate-600">{kase.district}</p></div>
+        <div><p className="mb-1 text-slate-500">Case status</p><p className="text-slate-300">{kase.status}</p><p className="mt-0.5 text-[10px] text-slate-600">{kase.complaintMode}</p></div>
+      </div>
+      <div className="mt-4 flex items-center gap-2 border-t border-white/[0.04] pt-3">
+        <Button variant="outline" size="sm" onClick={onCaseCracker} className="h-7 border-red-500/20 px-3 text-[10px] text-red-400 hover:border-red-500/30 hover:bg-red-500/10"><SearchIcon className="mr-1.5 size-3" />Case Cracker</Button>
+        <Button variant="outline" size="sm" onClick={onViewDistrict} className="h-7 border-white/10 px-3 text-[10px] text-slate-300 hover:border-emerald-500/30 hover:bg-emerald-500/10 hover:text-emerald-300"><MapPin className="mr-1.5 size-3" />View District</Button>
+      </div>
+    </motion.div>
+  )
+}
+
 export default function CasesTab() {
   const [search, setSearch] = useState('')
   const [districtFilter, setDistrictFilter] = useState('all')
@@ -193,6 +242,7 @@ export default function CasesTab() {
     openDossier, setActiveTab,
     fieldFirReports, fieldFirStorage, hydrateFieldFirReports,
     showFieldFirsOnly, setShowFieldFirsOnly, updateFieldFirStatus,
+    activeNarrativeArc, clearArcSelection,
   } = useCrimeSightStore()
 
   useEffect(() => {
@@ -208,11 +258,29 @@ export default function CasesTab() {
     setSelectedCaseDistrict(null)
   }, [selectedCaseDistrict, setSelectedCaseDistrict, setShowFieldFirsOnly])
 
+  // Direct FIR links must reveal the record even if the user was on a
+  // different page, date range, or district filter.
+  useEffect(() => {
+    if (!selectedFirId) return
+    const caseIndex = ALL_CASES.findIndex((kase) => kase.rowid === selectedFirId)
+    if (caseIndex < 0) return
+    setSearch('')
+    setDistrictFilter('all')
+    setStatusFilter('all')
+    setPriorityFilter('all')
+    setDateScope('all')
+    setShowFieldFirsOnly(false)
+    setPage(Math.floor(caseIndex / ITEMS_PER_PAGE) + 1)
+  }, [selectedFirId, setShowFieldFirsOnly])
+
   // When navigated from another tab, selectedFirId takes precedence for expansion
   const effectiveExpandedRow = selectedFirId || expandedRow
 
   const filtered = useMemo(() => {
-    let data = [...ALL_CASES]
+    const arc = activeNarrativeArc ? DEMO_NARRATIVE_ARCS.find((item) => item.id === activeNarrativeArc) : null
+    let data: DisplayCase[] = arc
+      ? arc.caseIds.map((id) => NARRATIVE_CASES.find((kase) => kase.rowid === id)).filter((kase): kase is GeneratedCase => Boolean(kase))
+      : [...ALL_CASES]
     if (debouncedSearch) {
       const q = debouncedSearch.toLowerCase()
       data = data.filter(c =>
@@ -227,7 +295,7 @@ export default function CasesTab() {
     if (dateScope === 'today') data = data.filter(c => isGenerated(c) && c.daysAgo === 0)
     if (dateScope === 'earlier') data = data.filter(c => !isGenerated(c) || c.daysAgo > 0)
     return data
-  }, [debouncedSearch, districtFilter, statusFilter, priorityFilter, dateScope])
+  }, [activeNarrativeArc, debouncedSearch, districtFilter, statusFilter, priorityFilter, dateScope])
 
   const todayCaseCount = useMemo(() => ALL_CASES.filter(c => isGenerated(c) && c.daysAgo === 0).length, [])
   const earlierCaseCount = ALL_CASES.length - todayCaseCount
@@ -277,6 +345,14 @@ export default function CasesTab() {
       </div>
 
       {/* Filters */}
+      {activeNarrativeArc && (() => {
+        const arc = DEMO_NARRATIVE_ARCS.find((item) => item.id === activeNarrativeArc)
+        if (!arc) return null
+        return <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2.5 text-xs">
+          <div><span className="font-semibold text-emerald-300">Operation FIR scope:</span> <span className="text-slate-300">{arc.name} — {arc.caseIds.length} linked FIRs only</span></div>
+          <button type="button" onClick={clearArcSelection} className="text-[10px] font-medium text-slate-400 hover:text-emerald-300">Clear operation filter</button>
+        </div>
+      })()}
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <div className="relative flex-1 min-w-[200px] max-w-xs">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-slate-500" />
@@ -671,15 +747,12 @@ export default function CasesTab() {
                         </div>
                       </td>
                     </motion.tr>
-                    {expanded && isGenerated(kase) && (
+                    {expanded && (
                       <tr className="border-t border-emerald-500/15 bg-white/[0.015]">
                         <td colSpan={9} className="p-0">
-                          <GeneratedFirDetail
-                            kase={kase}
-                            onCaseCracker={() => setCrackCase({ caseId: kase.rowid, fir: kase.fir, crimeType: kase.crimeType, district: kase.district })}
-                            onViewDistrict={() => navigateToDistrict(kase.districtRowid)}
-                            onOpenGovernedReview={() => setActiveTab('operations')}
-                          />
+                          {isGenerated(kase)
+                            ? <GeneratedFirDetail kase={kase} onCaseCracker={() => setCrackCase({ caseId: kase.rowid, fir: kase.fir, crimeType: kase.crimeType, district: kase.district })} onViewDistrict={() => navigateToDistrict(kase.districtRowid)} onOpenGovernedReview={() => setActiveTab('operations')} />
+                            : <KspFirQuickDetail kase={kase} onCaseCracker={() => setCrackCase({ caseId: kase.rowid, fir: kase.fir, crimeType: kase.crimeType, district: kase.district })} onViewDistrict={() => navigateToDistrict(kase.districtRowid)} />}
                         </td>
                       </tr>
                     )}

@@ -148,16 +148,18 @@ const GENERATED_DEMO_DATA: DashboardResponse = {
     districts: GEN_STATS.districts,
     officers: GEN_STATS.officers,
   },
-  alerts: getRecentCases(10).map((c, i) => ({
-    id: `gen-${i}`,
+  alerts: getRecentCases(10).map((c) => ({
+    // Keep the actual registry ROWID. The alert is a navigation control, not
+    // a display-only notification.
+    id: c.rowid,
     fir: c.fir,
     crimeType: c.crimeType,
     district: c.district,
     priority: c.priority as any,
     date: c.occurrenceDate.split(' ')[0],
   })),
-  recentCases: getRecentCases(5).map((c, i) => ({
-    id: `gen-r-${i}`,
+  recentCases: getRecentCases(5).map((c) => ({
+    id: c.rowid,
     fir: c.fir,
     crimeType: c.crimeType,
     district: c.district,
