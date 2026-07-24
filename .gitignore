@@ -17,3 +17,4 @@ prisma/prisma/
 *.m4a
 screenshots/
 videos/
+npm-cache/
