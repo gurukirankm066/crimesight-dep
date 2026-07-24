@@ -11,3 +11,9 @@ upload/
 .DS_Store
 .npm-cache/
 prisma/prisma/
+*.webm
+*.mov
+*.aiff
+*.m4a
+screenshots/
+videos/

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Shield, BarChart3, GitBranch, FileText, Brain, Map,
-  Search, Bell, Mic, ClipboardEdit, ClipboardCheck, History, LogOut, UserRound, X, Zap
+  Search, Bell, Mic, ClipboardEdit, ClipboardCheck, History, LogOut, UserRound, X, Zap, Trophy, Sparkles
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -38,6 +38,7 @@ import { TabErrorBoundary } from '@/components/crimesight/error-boundary'
 import SuspectDossier from '@/components/crimesight/suspect-dossier'
 import JudgeDemoMode from '@/components/crimesight/judge-demo-mode'
 import CaseCommandCard from '@/components/crimesight/case-command-card'
+import PrototypeDeck from '@/components/crimesight/prototype-deck'
 import { toast } from 'sonner'
 import { useCrimeSightStore } from '@/lib/store'
 
@@ -110,6 +111,7 @@ export default function Home() {
   const [showTimeline, setShowTimeline] = useState(false)
   const [showJudgeDemo, setShowJudgeDemo] = useState(false)
   const [showCaseCommand, setShowCaseCommand] = useState(false)
+  const [showPrototypeDeck, setShowPrototypeDeck] = useState(false)
   const prevTabRef = useRef(activeTab)
 
   const recordSessionEvent = useCallback((action: SessionEvent['action'], detail: string) => {
@@ -318,6 +320,16 @@ export default function Home() {
                 <Shield className="size-3" />
                 <span className="hidden xl:inline">Judge Story</span>
                 <span className="xl:hidden">Judge</span>
+              </button>
+              <button
+                onClick={() => setShowPrototypeDeck(true)}
+                className="hidden md:flex items-center gap-1.5 h-7 px-2 rounded-md border border-amber-500/30 bg-amber-500/[0.1] text-[10px] font-bold text-amber-300 hover:bg-amber-500/[0.18] transition-colors"
+                aria-label="Open Competition Deck"
+                title="View 11-slide presentation deck & save as PDF"
+              >
+                <Trophy className="size-3 text-amber-400" />
+                <span className="hidden xl:inline">Pitch Deck</span>
+                <span className="xl:hidden">Deck</span>
               </button>
               <button
                 onClick={handleSimulateLiveAlert}
@@ -593,6 +605,7 @@ export default function Home() {
           onOpenFieldFir={() => { setShowJudgeDemo(false); setShowFieldFir(true) }}
         />
         <CaseCommandCard open={showCaseCommand} onClose={() => setShowCaseCommand(false)} />
+        {showPrototypeDeck && <PrototypeDeck onClose={() => setShowPrototypeDeck(false)} />}
 
         {/* ═══ FOOTER — AI Chat Prominent ═══ */}
         <footer className="shrink-0 relative z-10 border-t border-white/[0.06] bg-[#060a12]/95 backdrop-blur-sm">
