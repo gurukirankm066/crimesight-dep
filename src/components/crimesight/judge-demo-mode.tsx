@@ -59,6 +59,13 @@ export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand, onOpen
     if (storyPlaying && step === 3) setStoryPlaying(false)
   }, [storyPlaying, step])
 
+  useEffect(() => {
+    if (!open) return
+    if (step === 2) setActiveTab('network')
+    else if (step === 3) setActiveTab('operations')
+    else if (step === 0) setActiveTab('map')
+  }, [open, step, setActiveTab])
+
   if (!open) return null
 
   const approved = reviewActions.find(action => action.firId === featuredCase.rowid)?.status === 'Approved'

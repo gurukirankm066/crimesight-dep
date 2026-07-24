@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Shield, BarChart3, GitBranch, FileText, Brain, Map,
-  Search, Bell, Mic, ClipboardEdit, ClipboardCheck, History, LogOut, UserRound, X
+  Search, Bell, Mic, ClipboardEdit, ClipboardCheck, History, LogOut, UserRound, X, Zap
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -130,6 +130,31 @@ export default function Home() {
     setAuthUser('')
     toast.success('Demo session closed')
   }, [authUser, recordSessionEvent])
+
+  const handleSimulateLiveAlert = useCallback(() => {
+    const randomSeq = Math.floor(1000 + Math.random() * 9000)
+    const districts = ['Bengaluru Urban', 'Mysuru', 'Mangaluru', 'Hubballi-Dharwad', 'Belagavi', 'Kalaburagi']
+    const crimeTypes = ['Armed Robbery', 'Chain Snatching', 'Cyber Fraud', 'Vehicle Theft', 'Rioting']
+    const district = districts[Math.floor(Math.random() * districts.length)]
+    const crimeType = crimeTypes[Math.floor(Math.random() * crimeTypes.length)]
+    const firNumber = `FIR/2026/KSP/LIVE-${randomSeq}`
+
+    incrementLivePulse()
+    setNewAlerts(prev => prev + 1)
+
+    toast.custom(() => (
+      <div className="flex items-center gap-2.5 bg-[#111827]/95 border border-red-500/40 rounded-lg px-3.5 py-3 shadow-xl shadow-red-950/40 w-[310px] max-w-[calc(100vw-2rem)] backdrop-blur-md">
+        <div className="size-3 rounded-full shrink-0 bg-red-500 animate-ping" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between">
+            <p className="text-[9px] text-red-400 uppercase tracking-wider font-bold">⚡ DEMO LIVE INCIDENT TRIGGERED</p>
+            <span className="text-[9px] font-mono text-slate-400">{firNumber}</span>
+          </div>
+          <p className="text-[12px] font-semibold text-white truncate mt-0.5">{crimeType} <span className="text-slate-400 font-normal">· {district}</span></p>
+        </div>
+      </div>
+    ), { duration: 4500, position: 'bottom-left' })
+  }, [incrementLivePulse])
 
   // ⌘K shortcut
   useEffect(() => {
@@ -293,6 +318,15 @@ export default function Home() {
                 <Shield className="size-3" />
                 <span className="hidden xl:inline">Judge Story</span>
                 <span className="xl:hidden">Judge</span>
+              </button>
+              <button
+                onClick={handleSimulateLiveAlert}
+                className="hidden sm:flex items-center gap-1.5 h-7 px-2 rounded-md border border-red-500/30 bg-red-500/[0.12] text-[10px] font-bold text-red-300 hover:bg-red-500/[0.2] transition-colors animate-pulse"
+                aria-label="Simulate Live Alert"
+                title="Inject a live synthetic crime alert during demo"
+              >
+                <Zap className="size-3 text-red-400" />
+                <span>Simulate Alert</span>
               </button>
               {/* Voice FIR — accessible via ⌘K */}
               <button
