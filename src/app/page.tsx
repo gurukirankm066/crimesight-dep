@@ -321,25 +321,7 @@ export default function Home() {
                 <span className="hidden xl:inline">Judge Story</span>
                 <span className="xl:hidden">Judge</span>
               </button>
-              <button
-                onClick={() => setShowPrototypeDeck(true)}
-                className="hidden md:flex items-center gap-1.5 h-7 px-2 rounded-md border border-amber-500/30 bg-amber-500/[0.1] text-[10px] font-bold text-amber-300 hover:bg-amber-500/[0.18] transition-colors"
-                aria-label="Open Competition Deck"
-                title="View 11-slide presentation deck & save as PDF"
-              >
-                <Trophy className="size-3 text-amber-400" />
-                <span className="hidden xl:inline">Pitch Deck</span>
-                <span className="xl:hidden">Deck</span>
-              </button>
-              <button
-                onClick={handleSimulateLiveAlert}
-                className="hidden sm:flex items-center gap-1.5 h-7 px-2 rounded-md border border-red-500/30 bg-red-500/[0.12] text-[10px] font-bold text-red-300 hover:bg-red-500/[0.2] transition-colors animate-pulse"
-                aria-label="Simulate Live Alert"
-                title="Inject a live synthetic crime alert during demo"
-              >
-                <Zap className="size-3 text-red-400" />
-                <span>Simulate Alert</span>
-              </button>
+
               {/* Voice FIR — accessible via ⌘K */}
               <button
                 onClick={() => setShowVoiceFir(true)}
