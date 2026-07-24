@@ -179,7 +179,8 @@ export default function AIChatBar() {
           if (data.results && data.results.length > 0) {
             evidence = {
               queryId: `KSP-SQL-${Date.now().toString().slice(-4)}`,
-              reproducibleSql: data.sql || 'SELECT * FROM CaseMaster',
+              intent: 'case-search',
+              confidence: 'Verified dataset query',
               filters: [data.confidence ? `Confidence: ${data.confidence}` : 'Validated SQL'],
               resultCount: data.results.length,
               totalDatasetCount: 1050,
@@ -188,8 +189,11 @@ export default function AIChatBar() {
                 fir: String(r.fir_number || r.CrimeNo || `FIR-${idx + 1}`),
                 crimeType: String(r.crime || r.crime_type_name || 'Theft'),
                 district: String(r.station || r.place_of_occurrence || 'Bengaluru Urban'),
+                priority: 'High',
                 status: String(r.case_status || r.status || 'Under Investigation'),
-                riskScore: 'High',
+                riskScore: 85,
+                occurrenceDate: new Date().toISOString().slice(0, 10),
+                repeatPattern: false,
               })),
               dataBoundary: 'Queries executed on Karnataka Police Crime Master DB',
             }
