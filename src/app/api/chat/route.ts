@@ -202,6 +202,28 @@ async function fallbackQueryEngine(userQuery: string): Promise<string> {
 }
 
 async function callLLM(messages: { role: "user" | "system" | "assistant"; content: string }[], temperature = 0.1): Promise<string> {
+  // 1. Zoho Catalyst QuickML LLM Serving Endpoint (GLM-4.7-Flash / Qwen 3.6 - 35B)
+  const quickmlUrl = process.env.QUICKML_CHAT_URL || process.env.NEXT_PUBLIC_QUICKML_CHAT_URL;
+  if (quickmlUrl) {
+    try {
+      const userMsg = messages.find(m => m.role === "user")?.content || "";
+      const model = process.env.QUICKML_MODEL || "GLM-4.7-Flash";
+      const res = await fetch(quickmlUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model, messages, message: userMsg }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const reply = data.reply || data.choices?.[0]?.message?.content || data.content;
+        if (reply) return reply.trim();
+      }
+    } catch (err) {
+      console.warn("QuickML LLM Serving error:", err);
+    }
+  }
+
+  // 2. ZAI SDK Fallback
   try {
     const zai = await ZAI.create();
     const completion = await zai.chat.completions.create({
@@ -212,6 +234,8 @@ async function callLLM(messages: { role: "user" | "system" | "assistant"; conten
     const result = completion.choices[0]?.message?.content?.trim();
     if (result) return result;
   } catch {}
+
+  // 3. Pattern Fallback Query Engine
   const userMsg = messages.find(m => m.role === "user")?.content || "";
   return await fallbackQueryEngine(userMsg);
 }
