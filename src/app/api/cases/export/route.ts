@@ -1,4 +1,5 @@
-import { db, serialize } from '@/lib/db'
+import { db } from '@/lib/db'
+import { enrichCases, getUnits, getActs, getSections, getEmployees } from '@/lib/dal'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(req: NextRequest) {
@@ -6,78 +7,62 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const search = searchParams.get('search') || ''
     const districtId = searchParams.get('district') || ''
-    const districtName = searchParams.get('districtName') || ''
-    const statusId = searchParams.get('status') || ''
+    const priority = searchParams.get('priority') || ''
+    const status = searchParams.get('status') || ''
 
-    const conditions: string[] = []
+    const where: any = {}
 
     if (search) {
-      conditions.push(`(c.CrimeNo LIKE '%${search}%' OR c.CaseNo LIKE '%${search}%')`)
+      where.OR = [
+        { fir_number: { contains: search } },
+        { place_of_occurrence: { contains: search } },
+        { ai_summary: { contains: search } },
+      ]
     }
     if (districtId) {
-      conditions.push(`u.DistrictID = ${districtId}`)
+      where.district_rowid = districtId
     }
-    if (districtName) {
-      conditions.push(`d.DistrictName = '${districtName}'`)
+    if (priority) {
+      where.case_priority = priority
     }
-    if (statusId) {
-      conditions.push(`c.CaseStatusID = ${statusId}`)
+    if (status) {
+      where.case_status = status
     }
 
-    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+    const cases = await db.caseMaster.findMany({
+      where,
+      orderBy: { CREATEDTIME: 'desc' },
+      take: 5000,
+    })
 
-    const raw = await db.$queryRawUnsafe(`
-      SELECT
-        c.CrimeNo,
-        c.CaseNo,
-        c.CrimeRegisteredDate,
-        c.IncidentFromDate,
-        c.InfoReceivedPSDate,
-        c.BriefFacts,
-        d.DistrictName,
-        u.UnitName AS StationName,
-        ch.CrimeGroupName AS MajorHead,
-        csh.CrimeHeadName AS MinorHead,
-        csm.CaseStatusName,
-        cc.CategoryName,
-        go.LookupValue AS Gravity,
-        ct.CourtName
-      FROM CaseMaster c
-      INNER JOIN Unit u ON c.PoliceStationID = u.UnitID
-      INNER JOIN District d ON u.DistrictID = d.DistrictID
-      LEFT JOIN CrimeHead ch ON c.CrimeMajorHeadID = ch.CrimeHeadID
-      LEFT JOIN CrimeSubHead csh ON c.CrimeMinorHeadID = csh.CrimeSubHeadID
-      LEFT JOIN CaseStatusMaster csm ON c.CaseStatusID = csm.CaseStatusID
-      LEFT JOIN CaseCategory cc ON c.CaseCategoryID = cc.CaseCategoryID
-      LEFT JOIN GravityOffence go ON c.GravityOffenceID = go.GravityOffenceID
-      LEFT JOIN Court ct ON c.CourtID = ct.CourtID
-      ${where}
-      ORDER BY c.CrimeRegisteredDate DESC
-      LIMIT 10000
-    `)
+    const [enriched, units, acts, sections, employees] = await Promise.all([
+      enrichCases(cases),
+      getUnits(),
+      getActs(),
+      getSections(),
+      getEmployees(),
+    ])
 
-    const rows = serialize(raw) as Record<string, any>[]
     const headers = [
-      'FIR Number', 'Case Number', 'Date of Registration', 'Date of Incident',
-      'Info Received at PS', 'District', 'Police Station', 'Major Crime Head',
-      'Minor Crime Head', 'Status', 'Category', 'Gravity', 'Court', 'Brief Facts',
+      'FIR Number', 'Occurrence Date', 'Complaint Date', 'Priority', 'Status',
+      'District', 'Police Station', 'Crime Type', 'Act', 'Section',
+      'Investigating Officer', 'Place of Occurrence', 'Summary',
     ]
 
-    const csvRows = rows.map(row => [
-      csvEscape(String(row.CrimeNo || '')),
-      csvEscape(String(row.CaseNo || '')),
-      csvEscape(String(row.CrimeRegisteredDate || '')),
-      csvEscape(String(row.IncidentFromDate || '')),
-      csvEscape(String(row.InfoReceivedPSDate || '')),
-      csvEscape(String(row.DistrictName || '')),
-      csvEscape(String(row.StationName || '')),
-      csvEscape(String(row.MajorHead || '')),
-      csvEscape(String(row.MinorHead || '')),
-      csvEscape(String(row.CaseStatusName || '')),
-      csvEscape(String(row.CategoryName || '')),
-      csvEscape(String(row.Gravity || '')),
-      csvEscape(String(row.CourtName || '')),
-      csvEscape(String(row.BriefFacts || '')),
+    const csvRows = enriched.map(c => [
+      csvEscape(c.fir_number || ''),
+      csvEscape(c.occurrence_datetime || ''),
+      csvEscape(c.complaint_datetime || ''),
+      csvEscape(c.case_priority || ''),
+      csvEscape(c.case_status || ''),
+      csvEscape(c.district_name || ''),
+      csvEscape(units.get(c.unit_rowid)?.unit_name || ''),
+      csvEscape(c.crime_type_name || ''),
+      csvEscape(acts.get(c.act_rowid)?.act_name || ''),
+      csvEscape(sections.get(c.section_rowid)?.section_code || ''),
+      csvEscape(employees.get(c.investigation_officer_rowid)?.full_name || ''),
+      csvEscape(c.place_of_occurrence || ''),
+      csvEscape(c.ai_summary || ''),
     ].join(','))
 
     const csv = [headers.join(','), ...csvRows].join('\n')
@@ -89,7 +74,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error: any) {
-    console.error('[GET /api/cases/export]', error.message)
+    console.error('[GET /api/cases/export]', error?.message || error)
     return NextResponse.json({ error: 'Export failed' }, { status: 500 })
   }
 }

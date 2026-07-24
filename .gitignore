@@ -9,3 +9,5 @@ prisma/dev.db
 prisma/*.db-journal
 upload/
 .DS_Store
+.npm-cache/
+prisma/prisma/

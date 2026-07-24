@@ -2,7 +2,9 @@ import ZAI from 'z-ai-web-dev-sdk'
 
 export async function POST(request: Request) {
   try {
-    const { question, history, currentTab } = await request.json()
+    const body = await request.json().catch(() => ({}))
+    const question = body.question || body.query
+    const { history, currentTab } = body
     if (!question) return Response.json({ answer: 'Please ask a question.' }, { status: 400 })
 
     const contextNote = currentTab

@@ -149,7 +149,7 @@ export default function JudgeDemoMode({ open, onClose, onOpenCaseCommand, onOpen
         </div>
 
         <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.07] bg-black/15 px-4 py-3 sm:px-6">
-          <Button variant="ghost" size="sm" onClick={() => { setStoryPlaying(false); step === 0 ? onClose() : setStep(current => current - 1) }} className="text-xs text-slate-400 hover:text-white"><ChevronLeft className="mr-1 size-3.5" /> {step === 0 ? 'Exit' : 'Back'}</Button>
+          <Button variant="ghost" size="sm" onClick={() => { setStoryPlaying(false); if (step === 0) onClose(); else setStep(current => current - 1); }} className="text-xs text-slate-400 hover:text-white"><ChevronLeft className="mr-1 size-3.5" /> {step === 0 ? 'Exit' : 'Back'}</Button>
           <div className="flex items-center gap-2">
             {step === 0 && <Button variant="outline" size="sm" onClick={() => setStoryPlaying(true)} className="border-emerald-500/25 bg-emerald-500/[0.06] text-xs text-emerald-100 hover:bg-emerald-500/[0.14]">{storyPlaying ? 'Guided story playing…' : 'Start guided story'}</Button>}
             {step === 2 && <Button variant="outline" size="sm" onClick={onOpenCaseCommand} className="border-cyan-500/20 bg-cyan-500/[0.06] text-xs text-cyan-100 hover:bg-cyan-500/[0.12]">Open case command card</Button>}

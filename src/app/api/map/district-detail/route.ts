@@ -20,7 +20,8 @@ export async function GET(req: NextRequest) {
   try {
     clearLookups()
 
-    const districtName = req.nextUrl.searchParams.get('district')
+    const { searchParams } = new URL(req.url)
+    const districtName = searchParams.get('district')
     if (!districtName) {
       return NextResponse.json({ error: 'Missing district query parameter' }, { status: 400 })
     }
@@ -140,7 +141,7 @@ export async function GET(req: NextRequest) {
     })
   } catch (error) {
     console.error('[GET /api/map/district-detail]', error)
-    const districtParam = req.nextUrl.searchParams.get('district') || ''
+    const districtParam = new URL(req.url).searchParams.get('district') || ''
     return NextResponse.json({ district: districtParam, totalCases: 0, cases: [], policeStations: [], locationClusters: [] })
   }
 }

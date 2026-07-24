@@ -20,56 +20,59 @@ interface ApiEdge {
 
 export async function GET() {
   try {
-    // Pick 30 cases with the most accused (richest connections)
-    const richCases = await db.$queryRawUnsafe(`
-      SELECT c.CaseMasterID, c.CrimeNo, c.CrimeRegisteredDate, c.PoliceStationID,
-             COUNT(a.AccusedMasterID) as accusedCount
-      FROM CaseMaster c
-      JOIN Accused a ON c.CaseMasterID = a.CaseMasterID
-      WHERE a.AccusedName != 'Unknown'
-      GROUP BY c.CaseMasterID
-      ORDER BY accusedCount DESC
-      LIMIT 30
-    `) as { CaseMasterID: bigint; CrimeNo: string; CrimeRegisteredDate: string; PoliceStationID: bigint; accusedCount: bigint }[]
+    // 1. Fetch suspects grouped by case
+    const suspects = await db.suspect.findMany({
+      where: {
+        suspect_name: {
+          notIn: ['Unknown', '']
+        }
+      },
+      take: 100,
+    })
 
-    const caseIds = richCases.map(c => Number(c.CaseMasterID))
-    if (caseIds.length === 0) return NextResponse.json({ nodes: [], edges: [], stats: { accusedNodes: 0, caseNodes: 0, stationNodes: 0, totalEdges: 0 } })
-
-    // All accused from those cases (deduplicated by AccusedMasterID)
-    const accused = await db.$queryRawUnsafe(`
-      SELECT a.AccusedMasterID, a.AccusedName, a.CaseMasterID
-      FROM Accused a
-      WHERE a.CaseMasterID IN (${caseIds.join(',')})
-        AND a.AccusedName != 'Unknown'
-    `) as { AccusedMasterID: bigint; AccusedName: string; CaseMasterID: bigint }[]
-
-    // Station IDs
-    const stationIds = [...new Set(richCases.map(c => Number(c.PoliceStationID)))]
-    const stations = stationIds.length > 0 ? await db.$queryRawUnsafe(`
-      SELECT UnitID, UnitName
-      FROM Unit
-      WHERE UnitID IN (${stationIds.join(',')})
-    `) as { UnitID: bigint; UnitName: string }[] : []
-
-    // Cases per station for sizing
-    const stationCaseCount: Record<number, number> = {}
-    for (const c of richCases) {
-      const sid = Number(c.PoliceStationID)
-      stationCaseCount[sid] = (stationCaseCount[sid] || 0) + 1
+    if (suspects.length === 0) {
+      return NextResponse.json({ nodes: [], edges: [], stats: { accusedNodes: 0, caseNodes: 0, stationNodes: 0, totalEdges: 0 } })
     }
 
-    // Accused per case count
-    const accusedPerCase: Record<number, number> = {}
-    for (const c of richCases) accusedPerCase[Number(c.CaseMasterID)] = Number(c.accusedCount)
+    // Get case IDs for these suspects
+    const caseRowids = [...new Set(suspects.map(s => s.case_rowid))].slice(0, 30)
+    
+    // Fetch cases and their corresponding police station units
+    const cases = await db.caseMaster.findMany({
+      where: {
+        ROWID: { in: caseRowids }
+      }
+    })
 
-    // Cases per accused
-    const casesPerAccused: Record<number, number> = {}
-    for (const a of accused) {
-      const aid = Number(a.AccusedMasterID)
-      casesPerAccused[aid] = (casesPerAccused[aid] || 0) + 1
+    const unitRowids = [...new Set(cases.map(c => c.unit_rowid))]
+    const units = await db.unit.findMany({
+      where: {
+        ROWID: { in: unitRowids }
+      }
+    })
+
+    const unitMap = new Map(units.map(u => [u.ROWID, u]))
+    const filteredSuspects = suspects.filter(s => caseRowids.includes(s.case_rowid))
+
+    // Count cases per station
+    const stationCaseCount: Record<string, number> = {}
+    for (const c of cases) {
+      stationCaseCount[c.unit_rowid] = (stationCaseCount[c.unit_rowid] || 0) + 1
     }
 
-    // === BUILD GRAPH ===
+    // Count suspects per case
+    const suspectPerCaseCount: Record<string, number> = {}
+    for (const s of filteredSuspects) {
+      suspectPerCaseCount[s.case_rowid] = (suspectPerCaseCount[s.case_rowid] || 0) + 1
+    }
+
+    // Count cases per suspect
+    const casesPerSuspect: Record<string, number> = {}
+    for (const s of filteredSuspects) {
+      casesPerSuspect[s.suspect_name] = (casesPerSuspect[s.suspect_name] || 0) + 1
+    }
+
+    // Build Graph Nodes & Edges
     const nodes: ApiNode[] = []
     const edges: ApiEdge[] = []
     const nodeSet = new Set<string>()
@@ -78,76 +81,71 @@ export async function GET() {
       if (!nodeSet.has(n.id)) { nodeSet.add(n.id); nodes.push(n) }
     }
 
-    // Station nodes (bottom layer)
-    const stationNodeIdMap: Record<number, string> = {}
-    for (const s of stations) {
-      const sid = Number(s.UnitID)
-      const id = `station-${sid}`
-      stationNodeIdMap[sid] = id
+    // Station nodes
+    for (const u of units) {
+      const id = `station-${u.ROWID}`
+      const caseCount = stationCaseCount[u.ROWID] || 1
       addNode({
         id,
-        name: s.UnitName,
+        name: u.unit_name,
         type: 'station',
-        value: Math.max(3, (stationCaseCount[sid] || 1)) * 1.5,
-        cases: stationCaseCount[sid] || 1,
-        label: s.UnitName,
+        value: Math.max(3, caseCount) * 1.5,
+        cases: caseCount,
+        label: u.unit_name,
       })
     }
 
-    // Case nodes (middle layer)
-    const caseNodeIdMap: Record<number, string> = {}
-    for (const c of richCases) {
-      const cid = Number(c.CaseMasterID)
-      const id = `case-${cid}`
-      caseNodeIdMap[cid] = id
-      const accusedCount = accusedPerCase[cid] || 1
+    // Case nodes
+    for (const c of cases) {
+      const id = `case-${c.ROWID}`
+      const accusedCount = suspectPerCaseCount[c.ROWID] || 1
       addNode({
         id,
-        name: c.CrimeNo || `FIR-${cid}`,
+        name: c.fir_number || `FIR-${c.ROWID}`,
         type: 'case',
         value: Math.max(3, accusedCount) * 1.2,
         cases: accusedCount,
-        subtype: c.CrimeRegisteredDate?.substring(0, 7) || '',
-        label: c.CrimeNo || `FIR #${cid}`,
+        subtype: c.occurrence_datetime?.substring(0, 7) || '',
+        label: c.fir_number || `FIR #${c.ROWID}`,
       })
-      // Case → Station edge
-      const sId = stationNodeIdMap[Number(c.PoliceStationID)]
-      if (sId) edges.push({ source: id, target: sId, value: 1, type: 'registered-at' })
+
+      // Case -> Station edge
+      if (unitMap.has(c.unit_rowid)) {
+        edges.push({ source: id, target: `station-${c.unit_rowid}`, value: 1, type: 'registered-at' })
+      }
     }
 
-    // Accused nodes (top layer)
-    const accusedNodeIdMap: Record<number, string> = {}
-    for (const a of accused) {
-      const aid = Number(a.AccusedMasterID)
-      if (accusedNodeIdMap[aid]) continue
-      const id = `accused-${aid}`
-      accusedNodeIdMap[aid] = id
-      const caseCount = casesPerAccused[aid] || 1
+    // Accused nodes
+    const suspectNodeIdMap: Record<string, string> = {}
+    for (const s of filteredSuspects) {
+      const id = `accused-${s.ROWID}`
+      suspectNodeIdMap[s.ROWID] = id
+      const caseCount = casesPerSuspect[s.suspect_name] || 1
       addNode({
         id,
-        name: a.AccusedName,
+        name: s.suspect_name,
         type: 'accused',
         value: Math.max(3, caseCount) * 1.0,
         cases: caseCount,
       })
-      // Accused → Case edge
-      const cId = caseNodeIdMap[Number(a.CaseMasterID)]
-      if (cId) edges.push({ source: id, target: cId, value: 1, type: 'involved-in' })
+
+      // Accused -> Case edge
+      edges.push({ source: id, target: `case-${s.case_rowid}`, value: 1, type: 'involved-in' })
     }
 
-    // Co-accused edges (accused sharing a case → subtle connection)
-    const caseToAccusedIds: Record<number, string[]> = {}
-    for (const a of accused) {
-      const cid = Number(a.CaseMasterID)
-      const aid = accusedNodeIdMap[Number(a.AccusedMasterID)]
-      if (!aid) continue
-      if (!caseToAccusedIds[cid]) caseToAccusedIds[cid] = []
-      caseToAccusedIds[cid].push(aid)
+    // Co-accused edges (suspects sharing a case)
+    const caseToSuspectIds: Record<string, string[]> = {}
+    for (const s of filteredSuspects) {
+      const nid = suspectNodeIdMap[s.ROWID]
+      if (!nid) continue
+      if (!caseToSuspectIds[s.case_rowid]) caseToSuspectIds[s.case_rowid] = []
+      caseToSuspectIds[s.case_rowid].push(nid)
     }
-    for (const [, aids] of Object.entries(caseToAccusedIds)) {
-      for (let i = 0; i < aids.length; i++) {
-        for (let j = i + 1; j < aids.length; j++) {
-          edges.push({ source: aids[i], target: aids[j], value: 1, type: 'co-accused' })
+
+    for (const [, sids] of Object.entries(caseToSuspectIds)) {
+      for (let i = 0; i < sids.length; i++) {
+        for (let j = i + 1; j < sids.length; j++) {
+          edges.push({ source: sids[i], target: sids[j], value: 1, type: 'co-accused' })
         }
       }
     }

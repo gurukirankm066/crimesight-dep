@@ -1,141 +1,148 @@
 import { db, serialize } from '@/lib/db'
 import { NextResponse } from 'next/server'
-
-/** Escape single quotes for safe SQL interpolation */
-function esc(str: string) { return str.replace(/'/g, "''") }
+import { getDistricts, getCrimeTypes } from '@/lib/dal'
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const type = searchParams.get('type') || 'district'
-  const districtName = searchParams.get('districtName') || null
-
-  // Common district JOIN + WHERE fragment for queries that don't already have District
-  const districtJoin = districtName
-    ? `JOIN Unit u ON c.PoliceStationID = u.UnitID JOIN District d ON u.DistrictID = d.DistrictID`
-    : ''
-  const districtWhere = districtName
-    ? `WHERE d.DistrictName = '${esc(districtName)}'`
-    : ''
-
   try {
+    const { searchParams } = new URL(request.url)
+    const type = searchParams.get('type') || 'district'
+    const districtName = searchParams.get('districtName') || null
+
+    let matchedDistrictId: string | null = null
+    if (districtName) {
+      const districts = await getDistricts()
+      for (const [, d] of districts) {
+        if (d.district_name === districtName) {
+          matchedDistrictId = d.ROWID
+          break
+        }
+      }
+    }
+
+    const whereCondition = matchedDistrictId ? { district_rowid: matchedDistrictId } : {}
+
     if (type === 'district') {
-      const rows = await db.$queryRawUnsafe(`
-        SELECT d.DistrictName as name, COUNT(c.CaseMasterID) as count
-        FROM CaseMaster c
-        JOIN Unit u ON c.PoliceStationID = u.UnitID
-        JOIN District d ON u.DistrictID = d.DistrictID
-        ${districtName ? `WHERE d.DistrictName = '${esc(districtName)}'` : ''}
-        GROUP BY d.DistrictID
-        ORDER BY count DESC
-        LIMIT 15
-      `)
+      const districts = await getDistricts()
+      const cases = await db.caseMaster.findMany({
+        select: { district_rowid: true },
+      })
+      const districtCounts = new Map<string, number>()
+      for (const c of cases) {
+        districtCounts.set(c.district_rowid, (districtCounts.get(c.district_rowid) || 0) + 1)
+      }
+      const rows = Array.from(districtCounts.entries()).map(([rowid, count]) => ({
+        name: districts.get(rowid)?.district_name || 'Unknown',
+        count,
+      })).sort((a, b) => b.count - a.count).slice(0, 15)
+
       return NextResponse.json(serialize(rows))
     }
 
     if (type === 'crimeType') {
-      const rows = await db.$queryRawUnsafe(`
-        SELECT ch.CrimeGroupName as name, COUNT(c.CaseMasterID) as count
-        FROM CaseMaster c
-        ${districtJoin}
-        JOIN CrimeHead ch ON c.CrimeMajorHeadID = ch.CrimeHeadID
-        ${districtWhere}
-        GROUP BY ch.CrimeHeadID
-        ORDER BY count DESC
-      `)
+      const crimeTypes = await getCrimeTypes()
+      const cases = await db.caseMaster.findMany({
+        where: whereCondition,
+        select: { crime_type_rowid: true },
+      })
+      const typeCounts = new Map<string, number>()
+      for (const c of cases) {
+        typeCounts.set(c.crime_type_rowid, (typeCounts.get(c.crime_type_rowid) || 0) + 1)
+      }
+      const rows = Array.from(typeCounts.entries()).map(([rowid, count]) => ({
+        name: crimeTypes.get(rowid)?.crime_type_name || 'Unknown',
+        count,
+      })).sort((a, b) => b.count - a.count)
+
       return NextResponse.json(serialize(rows))
     }
 
     if (type === 'monthly') {
-      const rows = await db.$queryRawUnsafe(`
-        SELECT substr(CrimeRegisteredDate, 1, 7) as month, COUNT(*) as count
-        FROM CaseMaster c
-        ${districtJoin}
-        ${districtWhere}
-        GROUP BY month
-        ORDER BY month
-      `)
+      const cases = await db.caseMaster.findMany({
+        where: whereCondition,
+        select: { occurrence_datetime: true },
+      })
+      const monthCounts = new Map<string, number>()
+      for (const c of cases) {
+        if (!c.occurrence_datetime) continue
+        const month = c.occurrence_datetime.substring(0, 7)
+        if (month.length === 7) {
+          monthCounts.set(month, (monthCounts.get(month) || 0) + 1)
+        }
+      }
+      const rows = Array.from(monthCounts.entries())
+        .map(([month, count]) => ({ month, count }))
+        .sort((a, b) => a.month.localeCompare(b.month))
+
       return NextResponse.json(serialize(rows))
     }
 
     if (type === 'timeOfDay') {
-      const whereClause = districtName
-        ? `AND d.DistrictName = '${esc(districtName)}'`
-        : ''
-      const rows = await db.$queryRawUnsafe(`
-        SELECT 
-          CAST(strftime('%H', IncidentFromDate) AS INTEGER) as hour,
-          COUNT(*) as count
-        FROM CaseMaster c
-        ${districtJoin}
-        WHERE IncidentFromDate IS NOT NULL ${whereClause}
-        GROUP BY hour
-        ORDER BY hour
-      `)
+      const cases = await db.caseMaster.findMany({
+        where: whereCondition,
+        select: { occurrence_datetime: true },
+      })
+      const hourCounts = new Map<number, number>()
+      for (const c of cases) {
+        if (!c.occurrence_datetime) continue
+        const dtStr = c.occurrence_datetime.substring(0, 19).replace(' ', 'T')
+        const dt = new Date(dtStr)
+        if (!isNaN(dt.getTime())) {
+          const hour = dt.getHours()
+          hourCounts.set(hour, (hourCounts.get(hour) || 0) + 1)
+        }
+      }
+      const rows = Array.from({ length: 24 }, (_, hour) => ({
+        hour,
+        count: hourCounts.get(hour) || 0,
+      }))
+
       return NextResponse.json(serialize(rows))
     }
 
     if (type === 'timeOfDayComparison') {
-      // Anchor to data's max date and compute month boundaries in JS
-      const maxDateSQL = districtName
-        ? `SELECT MAX(substr(c.CrimeRegisteredDate, 1, 7)) as maxMonth FROM CaseMaster c ${districtJoin} WHERE d.DistrictName = '${esc(districtName)}'`
-        : `SELECT MAX(substr(CrimeRegisteredDate, 1, 7)) as maxMonth FROM CaseMaster`
-      const maxDateRaw = await db.$queryRawUnsafe(maxDateSQL)
-      const maxMonth = (maxDateRaw as { maxMonth: string }[])[0]?.maxMonth || '2025-12'
+      const cases = await db.caseMaster.findMany({
+        where: whereCondition,
+        select: { occurrence_datetime: true },
+      })
+
+      let maxMonth = '2025-12'
+      for (const c of cases) {
+        if (c.occurrence_datetime && c.occurrence_datetime.substring(0, 7) > maxMonth) {
+          maxMonth = c.occurrence_datetime.substring(0, 7)
+        }
+      }
+
       const [maxY, maxM] = maxMonth.split('-').map(Number)
       let rY = maxY, rM = maxM - 2
       if (rM <= 0) { rM += 12; rY-- }
       const recentStart = `${rY}-${String(rM).padStart(2, '0')}`
+
       let pY = rY, pM = rM - 3
       if (pM <= 0) { pM += 12; pY-- }
       const prevStart = `${pY}-${String(pM).padStart(2, '0')}`
 
-      const districtFilterWhere = districtName
-        ? `AND d.DistrictName = '${esc(districtName)}'`
-        : ''
-
-      // Current period (most recent 3 months)
-      const currentRaw = await db.$queryRawUnsafe(`
-        SELECT 
-          CAST(strftime('%H', IncidentFromDate) AS INTEGER) as hour,
-          COUNT(*) as count
-        FROM CaseMaster c
-        ${districtJoin}
-        WHERE IncidentFromDate IS NOT NULL
-          AND substr(CrimeRegisteredDate, 1, 7) >= '${recentStart}'
-          AND substr(CrimeRegisteredDate, 1, 7) <= '${maxMonth}'
-          ${districtFilterWhere}
-        GROUP BY hour
-        ORDER BY hour
-      `)
-
-      // Previous period (3 months before that)
-      const previousRaw = await db.$queryRawUnsafe(`
-        SELECT 
-          CAST(strftime('%H', IncidentFromDate) AS INTEGER) as hour,
-          COUNT(*) as count
-        FROM CaseMaster c
-        ${districtJoin}
-        WHERE IncidentFromDate IS NOT NULL
-          AND substr(CrimeRegisteredDate, 1, 7) >= '${prevStart}'
-          AND substr(CrimeRegisteredDate, 1, 7) < '${recentStart}'
-          ${districtFilterWhere}
-        GROUP BY hour
-        ORDER BY hour
-      `)
-
       const currentMap = new Map<number, number>()
-      for (const row of serialize(currentRaw) as { hour: number; count: number }[]) {
-        currentMap.set(row.hour, row.count)
-      }
       const previousMap = new Map<number, number>()
-      for (const row of serialize(previousRaw) as { hour: number; count: number }[]) {
-        previousMap.set(row.hour, row.count)
+
+      for (const c of cases) {
+        if (!c.occurrence_datetime) continue
+        const m = c.occurrence_datetime.substring(0, 7)
+        const dtStr = c.occurrence_datetime.substring(0, 19).replace(' ', 'T')
+        const dt = new Date(dtStr)
+        if (isNaN(dt.getTime())) continue
+        const hour = dt.getHours()
+
+        if (m >= recentStart && m <= maxMonth) {
+          currentMap.set(hour, (currentMap.get(hour) || 0) + 1)
+        } else if (m >= prevStart && m < recentStart) {
+          previousMap.set(hour, (previousMap.get(hour) || 0) + 1)
+        }
       }
 
-      const result = Array.from({ length: 24 }, (_, i) => ({
-        hour: i,
-        current: currentMap.get(i) ?? 0,
-        previous: previousMap.get(i) ?? 0,
+      const result = Array.from({ length: 24 }, (_, hour) => ({
+        hour,
+        current: currentMap.get(hour) || 0,
+        previous: previousMap.get(hour) || 0,
       }))
 
       return NextResponse.json(serialize(result))
@@ -143,20 +150,25 @@ export async function GET(request: Request) {
 
     if (type === 'dayOfWeek') {
       const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-      const districtFilterWhere = districtName
-        ? `AND d.DistrictName = '${esc(districtName)}'`
-        : ''
-      const rows = await db.$queryRawUnsafe(`
-        SELECT 
-          CAST(strftime('%w', IncidentFromDate) AS INTEGER) as dayIndex,
-          COUNT(*) as count
-        FROM CaseMaster c
-        ${districtJoin}
-        WHERE IncidentFromDate IS NOT NULL ${districtFilterWhere}
-        GROUP BY dayIndex
-        ORDER BY dayIndex
-      `)
-      const mapped = (rows as { dayIndex: number; count: number }[]).map(r => ({ name: days[r.dayIndex] ?? 'Unknown', count: r.count }))
+      const cases = await db.caseMaster.findMany({
+        where: whereCondition,
+        select: { occurrence_datetime: true },
+      })
+      const dayCounts = new Map<number, number>()
+      for (const c of cases) {
+        if (!c.occurrence_datetime) continue
+        const dtStr = c.occurrence_datetime.substring(0, 19).replace(' ', 'T')
+        const dt = new Date(dtStr)
+        if (!isNaN(dt.getTime())) {
+          const day = dt.getDay()
+          dayCounts.set(day, (dayCounts.get(day) || 0) + 1)
+        }
+      }
+      const mapped = days.map((name, index) => ({
+        name,
+        count: dayCounts.get(index) || 0,
+      }))
+
       return NextResponse.json(serialize(mapped))
     }
 

@@ -1,17 +1,63 @@
 import { GENERATED_CASES } from '@/lib/case-generator'
+import { KSP_CASES } from '@/lib/ksp-data'
+import { db } from '@/lib/db'
+import { getCrimeTypes, getDistricts } from '@/lib/dal'
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ caseId: string }> }
 ) {
   const { caseId } = await params
-  const caseData = GENERATED_CASES.find(c => c.fir === caseId || c.rowid === caseId)
+  
+  let caseData: any = GENERATED_CASES.find(c => c.fir === caseId || c.rowid === caseId)
+  
+  if (!caseData) {
+    const kspMatch = KSP_CASES.find(c => c.fir === caseId || c.rowid === caseId)
+    if (kspMatch) {
+      caseData = {
+        fir: kspMatch.fir,
+        crimeType: kspMatch.crimeType,
+        district: kspMatch.district,
+        priority: kspMatch.priority,
+        riskScore: kspMatch.riskScore,
+        complaintMode: kspMatch.complaintMode,
+        complaintDate: kspMatch.complaintDate,
+        place: kspMatch.place,
+        suspectCount: kspMatch.suspects.length,
+        evidenceCount: kspMatch.evidence.length,
+        vehicleCount: kspMatch.vehicles.length,
+        hasRepeatOffender: kspMatch.hasRepeatOffender,
+        isSensitive: kspMatch.isSensitive,
+      }
+    }
+  }
+
+  if (!caseData) {
+    const dbCase = await db.caseMaster.findUnique({ where: { ROWID: caseId } })
+    if (dbCase) {
+      const [districts, crimeTypes] = await Promise.all([getDistricts(), getCrimeTypes()])
+      caseData = {
+        fir: dbCase.fir_number,
+        crimeType: crimeTypes.get(dbCase.crime_type_rowid)?.crime_type_name || 'Offence',
+        district: districts.get(dbCase.district_rowid)?.district_name || 'Karnataka',
+        priority: dbCase.case_priority,
+        riskScore: dbCase.ai_risk_score || 55,
+        complaintMode: dbCase.complaint_mode,
+        complaintDate: dbCase.complaint_datetime,
+        place: dbCase.place_of_occurrence,
+        suspectCount: 1,
+        evidenceCount: 2,
+        vehicleCount: 0,
+        hasRepeatOffender: false,
+        isSensitive: dbCase.is_sensitive,
+      }
+    }
+  }
 
   if (!caseData) {
     return Response.json({ error: 'Case not found' }, { status: 404 })
   }
 
-  // Generate AI-style case crack analysis based on case data
   const leadStrength = caseData.riskScore > 70 ? 'Strong' : caseData.riskScore > 40 ? 'Moderate' : 'Weak'
   const suspectLeads = caseData.suspectCount > 0
     ? `${caseData.suspectCount} suspect(s) identified. ${caseData.hasRepeatOffender ? 'Repeat offender pattern detected — cross-reference with previous cases advised.' : 'No repeat offender flag.'}`
