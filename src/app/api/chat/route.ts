@@ -202,15 +202,22 @@ async function fallbackQueryEngine(userQuery: string): Promise<string> {
 }
 
 async function callLLM(messages: { role: "user" | "system" | "assistant"; content: string }[], temperature = 0.1): Promise<string> {
-  // 1. Zoho Catalyst QuickML LLM Serving Endpoint (GLM-4.7-Flash / Qwen 3.6 - 35B)
-  const quickmlUrl = process.env.QUICKML_CHAT_URL || process.env.NEXT_PUBLIC_QUICKML_CHAT_URL;
+  const apiKey = process.env.GLM_API_KEY || process.env.QUICKML_API_KEY || process.env.ZAI_API_KEY;
+
+  // 1. Zoho Catalyst QuickML / GLM LLM Serving Endpoint
+  const quickmlUrl = process.env.QUICKML_CHAT_URL || process.env.NEXT_PUBLIC_QUICKML_CHAT_URL || process.env.GLM_API_URL;
   if (quickmlUrl) {
     try {
       const userMsg = messages.find(m => m.role === "user")?.content || "";
       const model = process.env.QUICKML_MODEL || "GLM-4.7-Flash";
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (apiKey) {
+        headers["Authorization"] = `Bearer ${apiKey}`;
+        headers["x-api-key"] = apiKey;
+      }
       const res = await fetch(quickmlUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ model, messages, message: userMsg }),
       });
       if (res.ok) {
@@ -219,11 +226,36 @@ async function callLLM(messages: { role: "user" | "system" | "assistant"; conten
         if (reply) return reply.trim();
       }
     } catch (err) {
-      console.warn("QuickML LLM Serving error:", err);
+      console.warn("GLM / QuickML LLM Serving error:", err);
     }
   }
 
-  // 2. ZAI SDK Fallback
+  // 2. Direct GLM API Endpoint (BigModel PaaS)
+  if (apiKey) {
+    try {
+      const res = await fetch("https://open.bigmodel.cn/api/paas/v4/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "glm-4-flash",
+          messages,
+          temperature,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const reply = data.choices?.[0]?.message?.content;
+        if (reply) return reply.trim();
+      }
+    } catch (err) {
+      console.warn("Direct GLM API error:", err);
+    }
+  }
+
+  // 3. ZAI SDK Fallback
   try {
     const zai = await ZAI.create();
     const completion = await zai.chat.completions.create({
@@ -235,7 +267,7 @@ async function callLLM(messages: { role: "user" | "system" | "assistant"; conten
     if (result) return result;
   } catch {}
 
-  // 3. Pattern Fallback Query Engine
+  // 4. Pattern Fallback Query Engine
   const userMsg = messages.find(m => m.role === "user")?.content || "";
   return await fallbackQueryEngine(userMsg);
 }
