@@ -167,40 +167,65 @@ export default function AIChatBar() {
       let provider: ChatMessage['provider']
 
       try {
-        const res = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: trimmed }),
-        })
-        const data = await res.json()
-        if (data && data.answer) {
-          answer = data.answer
-          provider = 'verified-query'
-          if (data.results && data.results.length > 0) {
-            evidence = {
-              queryId: `KSP-SQL-${Date.now().toString().slice(-4)}`,
-              intent: 'case-search',
-              confidence: 'Verified dataset query',
-              filters: [data.confidence ? `Confidence: ${data.confidence}` : 'Validated SQL'],
-              resultCount: data.results.length,
-              totalDatasetCount: 1050,
-              cases: data.results.slice(0, 5).map((r: Record<string, unknown>, idx: number) => ({
-                id: String(idx),
-                fir: String(r.fir_number || r.CrimeNo || `FIR-${idx + 1}`),
-                crimeType: String(r.crime || r.crime_type_name || 'Theft'),
-                district: String(r.station || r.place_of_occurrence || 'Bengaluru Urban'),
-                priority: 'High',
-                status: String(r.case_status || r.status || 'Under Investigation'),
-                riskScore: 85,
-                occurrenceDate: new Date().toISOString().slice(0, 10),
-                repeatPattern: false,
-              })),
-              dataBoundary: 'Queries executed on Karnataka Police Crime Master DB',
+        if (isGovernedFirQuestion(trimmed)) {
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: trimmed }),
+          }).catch(() => null)
+
+          if (res && res.ok) {
+            const data = await res.json()
+            if (data && data.answer) {
+              answer = data.answer
+              provider = 'verified-query'
+              if (data.results && data.results.length > 0) {
+                evidence = {
+                  queryId: `KSP-SQL-${Date.now().toString().slice(-4)}`,
+                  intent: 'case-search',
+                  confidence: 'Verified dataset query',
+                  filters: [data.confidence ? `Confidence: ${data.confidence}` : 'Validated SQL'],
+                  resultCount: data.results.length,
+                  totalDatasetCount: 1050,
+                  cases: data.results.slice(0, 5).map((r: Record<string, unknown>, idx: number) => ({
+                    id: String(idx),
+                    fir: String(r.fir_number || r.CrimeNo || `FIR-${idx + 1}`),
+                    crimeType: String(r.crime || r.crime_type_name || 'Theft'),
+                    district: String(r.station || r.place_of_occurrence || 'Bengaluru Urban'),
+                    priority: 'High',
+                    status: String(r.case_status || r.status || 'Under Investigation'),
+                    riskScore: 85,
+                    occurrenceDate: new Date().toISOString().slice(0, 10),
+                    repeatPattern: false,
+                  })),
+                  dataBoundary: 'Queries executed on Karnataka Police Crime Master DB',
+                }
+              }
+            } else {
+              const gov = runGovernedFirQuery(trimmed)
+              answer = gov.reply
+              evidence = gov
+              provider = 'verified-query'
             }
+          } else {
+            const gov = runGovernedFirQuery(trimmed)
+            answer = gov.reply
+            evidence = gov
+            provider = 'verified-query'
           }
         } else {
-          answer = getConversationFallback(trimmed).reply
-          provider = 'guided-fallback'
+          const msgLower = trimmed.toLowerCase()
+          if (msgLower === 'yes' || msgLower === 'yeah' || msgLower === 'yep' || msgLower === 'sure' || msgLower === 'ok') {
+            answer = 'Great! Please type your query, for example: **"Show theft cases in Whitefield"** or **"How many total cases are open?"**'
+            provider = 'guided-fallback'
+          } else if (isQuickMlConversationConfigured()) {
+            const quickMl = await askQuickMlConversation(trimmed, chatHistory)
+            answer = quickMl.reply
+            provider = quickMl.provider
+          } else {
+            answer = getConversationFallback(trimmed).reply
+            provider = 'guided-fallback'
+          }
         }
       } catch {
         answer = getConversationFallback(trimmed).reply
